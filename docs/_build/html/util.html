@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>mlcomm.util &#8212; mlcomm 0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=12dfc556" />
+    <script src="_static/documentation_options.js?v=2709fde1"></script>
+    <script src="_static/doctools.js?v=9a2dae69"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Codebook Construction" href="tutorials/building_codebooks.html" />
+    <link rel="prev" title="mlcomm.channels" href="channels.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <img alt="_images/wrench.png" src="_images/wrench.png" />
+<section id="module-mlcomm.util">
+<span id="mlcomm-util"></span><h1>mlcomm.util<a class="headerlink" href="#module-mlcomm.util" title="Link to this heading">¶</a></h1>
+<p>Adaptive Communication Decision and Information Systems (ACDIS) - User License
+<a class="reference external" href="https://bloch.ece.gatech.edu/researchgroup/">https://bloch.ece.gatech.edu/researchgroup/</a></p>
+<p>Copyright (c) 2024-2025 Georgia Institute of Technology</p>
+<p>Permission is hereby granted, free of charge, to any person obtaining a 
+copy of this software and associated documentation files (the “Software”),
+to deal in the Software without restriction, including without limitation 
+the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+and/or sell copies of the Software, and to permit persons to whom the 
+Software is furnished to do so, subject to the following conditions:</p>
+<p>The above copyright notice and this permission notice shall be included
+in all copies or substantial portions of the Software. Users shall cite 
+ACDIS publications regarding this work.</p>
+<p>THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL 
+THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR 
+OTHER LIABILITY, WHETHER INANACTION OF CONTRACT TORT OR OTHERWISE, 
+ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR 
+OTHER DEALINGS IN THE SOFTWARE.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="mlcomm.util.avec">
+<span class="sig-prename descclassname"><span class="pre">mlcomm.util.</span></span><span class="sig-name descname"><span class="pre">avec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">angle</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_elements</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.util.avec" title="Link to this definition">¶</a></dt>
+<dd><section id="description">
+<h2>Description<a class="headerlink" href="#description" title="Link to this heading">¶</a></h2>
+<p>Generates array response for a Uniform Linear Array (ULA) centered along the x-axis.</p>
+</section>
+<section id="parameters">
+<h2>Parameters<a class="headerlink" href="#parameters" title="Link to this heading">¶</a></h2>
+<dl class="simple">
+<dt>angle<span class="classifier">float</span></dt><dd><p>Angle in radians of the AoA or AoD.</p>
+</dd>
+<dt>num_elements: int</dt><dd><p>Number of elements in the ULA.</p>
+</dd>
+</dl>
+</section>
+<section id="returns">
+<h2>Returns<a class="headerlink" href="#returns" title="Link to this heading">¶</a></h2>
+<dl class="simple">
+<dt>array_response: numpy ndarray of complex float</dt><dd><p>Instantaneous, normalized narrowband response of ULA to impining signal, or transmitted singal at designated ‘angle’.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mlcomm.util.deg2rad">
+<span class="sig-prename descclassname"><span class="pre">mlcomm.util.</span></span><span class="sig-name descname"><span class="pre">deg2rad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">degs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.util.deg2rad" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mlcomm.util.generate_rgb_gradient">
+<span class="sig-prename descclassname"><span class="pre">mlcomm.util.</span></span><span class="sig-name descname"><span class="pre">generate_rgb_gradient</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_points</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'gt'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.util.generate_rgb_gradient" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mlcomm.util.init_figs">
+<span class="sig-prename descclassname"><span class="pre">mlcomm.util.</span></span><span class="sig-name descname"><span class="pre">init_figs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.util.init_figs" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mlcomm.util.pad_and_mean">
+<span class="sig-prename descclassname"><span class="pre">mlcomm.util.</span></span><span class="sig-name descname"><span class="pre">pad_and_mean</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_len</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.util.pad_and_mean" title="Link to this definition">¶</a></dt>
+<dd><p>row wise mean for vectors in a list or matrix X</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mlcomm.util.pad_and_mean_last">
+<span class="sig-prename descclassname"><span class="pre">mlcomm.util.</span></span><span class="sig-name descname"><span class="pre">pad_and_mean_last</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_len</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.util.pad_and_mean_last" title="Link to this definition">¶</a></dt>
+<dd><p>row wise mean for vectors in a list or matrix X</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mlcomm.util.pad_vec">
+<span class="sig-prename descclassname"><span class="pre">mlcomm.util.</span></span><span class="sig-name descname"><span class="pre">pad_vec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_len</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.util.pad_vec" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mlcomm.util.pad_vec_last">
+<span class="sig-prename descclassname"><span class="pre">mlcomm.util.</span></span><span class="sig-name descname"><span class="pre">pad_vec_last</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_len</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.util.pad_vec_last" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mlcomm.util.rad2deg">
+<span class="sig-prename descclassname"><span class="pre">mlcomm.util.</span></span><span class="sig-name descname"><span class="pre">rad2deg</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rads</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.util.rad2deg" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mlcomm.util.randcn">
+<span class="sig-prename descclassname"><span class="pre">mlcomm.util.</span></span><span class="sig-name descname"><span class="pre">randcn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">M</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.util.randcn" title="Link to this definition">¶</a></dt>
+<dd><section id="id1">
+<h2>Description<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h2>
+<p>Generates a numpy array of complex floats representing standard circularly symmetric complex Gaussian Noise.</p>
+</section>
+<section id="id2">
+<h2>Parameters<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<dl class="simple">
+<dt>M<span class="classifier">int</span></dt><dd><p>Length of noise vector required.</p>
+</dd>
+</dl>
+</section>
+<section id="id3">
+<h2>Returns<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
+<dl class="simple">
+<dt>noise<span class="classifier">numpy ndarray of complex floats</span></dt><dd><p>Vector representing the noise values.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/gtlogo.png" alt="Logo"/>
+            </a></p>
+<h1 class="logo"><a href="index.html">mlcomm</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="setup_and_installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Functional Blocks</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="algorithms.html">mlcomm.algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="codebooks.html">mlcomm.codebooks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="channels.html">mlcomm.channels</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">mlcomm.util</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#mlcomm.util.avec"><code class="docutils literal notranslate"><span class="pre">avec()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#mlcomm.util.deg2rad"><code class="docutils literal notranslate"><span class="pre">deg2rad()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#mlcomm.util.generate_rgb_gradient"><code class="docutils literal notranslate"><span class="pre">generate_rgb_gradient()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#mlcomm.util.init_figs"><code class="docutils literal notranslate"><span class="pre">init_figs()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#mlcomm.util.pad_and_mean"><code class="docutils literal notranslate"><span class="pre">pad_and_mean()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#mlcomm.util.pad_and_mean_last"><code class="docutils literal notranslate"><span class="pre">pad_and_mean_last()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#mlcomm.util.pad_vec"><code class="docutils literal notranslate"><span class="pre">pad_vec()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#mlcomm.util.pad_vec_last"><code class="docutils literal notranslate"><span class="pre">pad_vec_last()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#mlcomm.util.rad2deg"><code class="docutils literal notranslate"><span class="pre">rad2deg()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#mlcomm.util.randcn"><code class="docutils literal notranslate"><span class="pre">randcn()</span></code></a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Tutorials:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/building_codebooks.html">Codebook Construction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/algorithm_prototypes.html">Algorithm Prototypes and Templates</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="channels.html" title="previous chapter">mlcomm.channels</a></li>
+      <li>Next: <a href="tutorials/building_codebooks.html" title="next chapter">Codebook Construction</a></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2024, Georgia Institute of Technology.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.3.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+      |
+      <a href="_sources/util.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

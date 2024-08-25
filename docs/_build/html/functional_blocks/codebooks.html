@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>mlcomm.codebooks &#8212; mlcomm 0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=12dfc556" />
+    <script src="../_static/documentation_options.js?v=2709fde1"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="Installation" href="../setup_and_installation.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <img alt="../_images/atl2077_gold_cell.png" src="../_images/atl2077_gold_cell.png" />
+<section id="mlcomm-codebooks">
+<h1>mlcomm.codebooks<a class="headerlink" href="#mlcomm-codebooks" title="Link to this heading">¶</a></h1>
+<p>Features codebook construction for both Binary Hierarchical codebook, shown in Figure below,</p>
+<p>In addition, we feature construction of a Trinary Hierarhical codebook in which each narrow beam has a corresponding broad beam steered in the same direction.  Conversely, the broader beams split into three non-overlapping beams as well.  Example shown below.</p>
+<img alt="../_images/beamforming_pattern_demo.png" src="../_images/beamforming_pattern_demo.png" />
+<p id="module-mlcomm.codebooks">Created on Wed Nov 13 11:59:29 2019</p>
+<p>&#64;author: nate</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="mlcomm.codebooks.BinaryHierarchicalCodebook">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mlcomm.codebooks.</span></span><span class="sig-name descname"><span class="pre">BinaryHierarchicalCodebook</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.codebooks.BinaryHierarchicalCodebook" title="Link to this definition">¶</a></dt>
+<dd><section id="description">
+<h2>Description<a class="headerlink" href="#description" title="Link to this heading">¶</a></h2>
+<p>Organizes the master codebook using a binary tree graph.  Each node corresponds
+to a beamforming vector, and has a master index (midx).</p>
+<p>Along with the master index, each level has an index ‘h’ along with a left-to-right index ‘i’ 
+from 0 to 2**(h + 1)-1, for instance, node 3 has (h,i) = (1,1), and node 11 has (h,i) = (3,5).</p>
+<p>Each node is a ‘Node’ class which holds various attributes along with indices.</p>
+<p>The beamforming vectors of the codebook are calculated based on the min and max angles specified 
+in the params dict (described in Parameters).  The sets of phase shifts are designed to be applied to a 
+Uniform Linear Array (ULA) along the x-axis.  The main beam of the beamforming patterns  that correspond 
+to the beamforming vectors are non-overlapping and evenly spaced to cover the specfied swath.</p>
+</section>
+<section id="attributes">
+<h2>Attributes<a class="headerlink" href="#attributes" title="Link to this heading">¶</a></h2>
+<dl class="simple">
+<dt>H<span class="classifier">int</span></dt><dd><p>Number of levels in the hierarchical codebook.</p>
+</dd>
+<dt>M<span class="classifier">int</span></dt><dd><p>Number of physical antenna elements.</p>
+</dd>
+<dt>B<span class="classifier">int</span></dt><dd><p>Number of RF chains, the number of analog-to-digital or 
+digital-to-analog converters.</p>
+</dd>
+<dt>S<span class="classifier">int</span></dt><dd><p>Number of data streams to support simultaneous users.</p>
+</dd>
+<dt>beamwidths<span class="classifier">numpy ndarray of floats</span></dt><dd><p>beamwidth indicating the coverage area for beams, the h element is the h level’s beamwidth.</p>
+</dd>
+<dt>steered_angles<span class="classifier">list of numpy ndarray of floats</span></dt><dd><p>The h element in the list is a numpy ndarray of length 2^(h+1) with elements indicating the steered beam direction for beam (h,i).</p>
+</dd>
+<dt>nodes<span class="classifier">list of Node type class</span></dt><dd><p>Each element of the list is an instance of Node class for a particular beamforming vector.</p>
+</dd>
+<dt>level_midxs<span class="classifier">list of lists</span></dt><dd><p>Each element in the list is a list of ints, the h list is the master indices at level h.</p>
+</dd>
+<dt>base_midxs: list of lists</dt><dd><p>equivalent to level_midxs for this class.</p>
+</dd>
+</dl>
+</section>
+<section id="notes">
+<h2>Notes<a class="headerlink" href="#notes" title="Link to this heading">¶</a></h2>
+<p>Additional attributes are passed to each instance of class Node in nodes.</p>
+<p>Recommend set ‘depth’ = np.ceil(np.log2(num_elements)) or set ‘num_elements’ &lt;= 2**depth.</p>
+<p>Quality of beamforming vector patterns degrades with fewer RF chains, set by num_rf_chains.</p>
+</section>
+<section id="example-use">
+<h2>Example Use<a class="headerlink" href="#example-use" title="Link to this heading">¶</a></h2>
+<p>For use in Multi-Armed Bandit algorithms in which each beam represents an
+arm of a bandit, one may assign bandit statistics to each Node class object
+with mean rewards, number of times pulled, empirical mean, etc.</p>
+<p>Codebook featured in works such as 
+- Chiu, Sung-En, Nancy Ronquillo, and Tara Javidi. “Active learning and CSI acquisition for mmWave initial alignment.” IEEE Journal on Selected Areas in Communications 37.11 (2019): 2474-2489.
+- Blinn, Nathan, Jana Boerger, and Matthieu Bloch. “mmWave Beam Steering with Hierarchical Optimal Sampling for Unimodal Bandits.” ICC 2021-IEEE International Conference on Communications. IEEE, 2021.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="mlcomm.codebooks.BinaryHierarchicalCodebook.get_midx">
+<span class="sig-name descname"><span class="pre">get_midx</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">h</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">i</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.codebooks.BinaryHierarchicalCodebook.get_midx" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</section>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="mlcomm.codebooks.Node">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mlcomm.codebooks.</span></span><span class="sig-name descname"><span class="pre">Node</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.codebooks.Node" title="Link to this definition">¶</a></dt>
+<dd><p>A class to represent a node in a hierarchical structure.</p>
+<section id="id1">
+<h2>Attributes<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h2>
+<dl class="simple">
+<dt>midx<span class="classifier">int</span></dt><dd><p>The master index of the node.</p>
+</dd>
+<dt>h<span class="classifier">int</span></dt><dd><p>The hierarchical level of the node.</p>
+</dd>
+<dt>i<span class="classifier">int</span></dt><dd><p>The index of the node at its level.</p>
+</dd>
+<dt>indices<span class="classifier">tuple</span></dt><dd><p>A tuple containing the hierarchical level and index of the node.</p>
+</dd>
+<dt>steered_angle<span class="classifier">float</span></dt><dd><p>The steered angle of the node.</p>
+</dd>
+<dt>cvg_region_start<span class="classifier">float</span></dt><dd><p>The start of the coverage region for the node.</p>
+</dd>
+<dt>cvg_region_stop<span class="classifier">float</span></dt><dd><p>The stop of the coverage region for the node.</p>
+</dd>
+<dt>beamwidth<span class="classifier">float</span></dt><dd><p>The beamwidth of the node, calculated as the absolute difference between
+the coverage region start and stop.</p>
+</dd>
+<dt>zoom_out_midx<span class="classifier">int</span></dt><dd><p>Provided by initializing codebook class object. For the TrinaryPointedHierarchicalCodebook, this is a master 
+index of a beamforming vector with the same steering angle at level h-1.  This is the parent node in a 
+BinaryHierarchicalCodebook</p>
+</dd>
+<dt>zoom_in_midxs<span class="classifier">list of ints</span></dt><dd><p>Provided by initializing codebook class object. Master indices of narrower beamforming vectors at h+1 that 
+the Node aggregates.  They are non-overlapping.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="mlcomm.codebooks.TrinaryPointedHierarchicalCodebook">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mlcomm.codebooks.</span></span><span class="sig-name descname"><span class="pre">TrinaryPointedHierarchicalCodebook</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.codebooks.TrinaryPointedHierarchicalCodebook" title="Link to this definition">¶</a></dt>
+<dd><section id="id2">
+<h2>Description<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<p>Each node is a ‘Node’ class which holds various attributes along with indices</p>
+<p>The beamforming vectors of the codebook are calculated based on the min and max angles specified 
+in the params dict (described in Parameters).  The sets of phase shifts are designed to be applied to a 
+Uniform Linear Array (ULA) along the x-axis.  The main beam of the beamforming patterns  that correspond 
+to the beamforming vectors are non-overlapping and evenly spaced to cover the specfied swath.</p>
+</section>
+<section id="id3">
+<h2>Attributes<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
+<dl class="simple">
+<dt>num_h0<span class="classifier">int</span></dt><dd><p>Number of initial beamforming vectors in the top-level base set.</p>
+</dd>
+<dt>H<span class="classifier">int</span></dt><dd><p>Number of levels in the hierarchical codebook.</p>
+</dd>
+<dt>M<span class="classifier">int</span></dt><dd><p>Number of physical antenna elements.</p>
+</dd>
+<dt>B<span class="classifier">int</span></dt><dd><p>Number of RF chains, the number of analog-to-digital or 
+digital-to-analog converters.</p>
+</dd>
+<dt>S<span class="classifier">int</span></dt><dd><p>Number of data streams to support simultaneous users.</p>
+</dd>
+<dt>beamwidths<span class="classifier">numpy ndarray of floats</span></dt><dd><p>beamwidth indicating the coverage area for beams, the h element is the h level’s beamwidth.</p>
+</dd>
+<dt>steered_angles<span class="classifier">list of numpy ndarray of floats</span></dt><dd><p>The h element in the list is a numpy ndarray of length 2^(h+1) with elements indicating the steered beam direction for beam (h,i).</p>
+</dd>
+<dt>nodes<span class="classifier">list of Node type class</span></dt><dd><p>Each element of the list is an instance of Node class for a particular beamforming vector.</p>
+</dd>
+<dt>level_midxs<span class="classifier">list of lists</span></dt><dd><p>Each element in the list is a list of ints, the h list is the master indices at level h.</p>
+</dd>
+<dt>base_midxs: list of lists</dt><dd><p>the set of size self.num_h0 which minimally covers the range of angles with the broadest beamforming patterns.</p>
+</dd>
+</dl>
+</section>
+<section id="id4">
+<h2>Notes<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h2>
+<p>Additional attributes are passed to each instance of class Node in nodes.</p>
+<p>Recommend set ‘depth’ = np.ceil(np.log2(num_elements)) or set ‘num_elements’ &lt;= 2**depth.</p>
+<p>Quality of beamforming vector patterns degrades with fewer RF chains, set by num_rf_chains.</p>
+</section>
+<section id="id5">
+<h2>Example Use<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h2>
+<p>For use in Multi-Armed Bandit algorithms in which each beam represents an
+arm of a bandit, one may assign bandit statistics to each Node class object
+with mean rewards, number of times pulled, empirical mean, etc.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="mlcomm.codebooks.TrinaryPointedHierarchicalCodebook.get_midx">
+<span class="sig-name descname"><span class="pre">get_midx</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">h</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">i</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.codebooks.TrinaryPointedHierarchicalCodebook.get_midx" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mlcomm.codebooks.build_hybrid_vector">
+<span class="sig-prename descclassname"><span class="pre">mlcomm.codebooks.</span></span><span class="sig-name descname"><span class="pre">build_hybrid_vector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">F_opt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">A_can</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_rf_chains</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_data_streams</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.codebooks.build_hybrid_vector" title="Link to this definition">¶</a></dt>
+<dd><section id="id6">
+<h2>Description<a class="headerlink" href="#id6" title="Link to this heading">¶</a></h2>
+<p>Build hybrid analog-digital beamforming vector for optimal set of weights
+contained in vector F_opt.  The final hybrid beamforming vector is expressed
+as the matrix product, F = <a class="reference external" href="mailto:F_bb&#37;&#52;&#48;F_rf">F_bb<span>&#64;</span>F_rf</a>.  If the number of RF chains is equal
+to the number of elements, F is equivalent to F_opt.</p>
+<p>There is an extra set of lines of code that ensures that different columns
+of the candidate vectors matrix are selected as to not make the resulting codeword 
+matrix singular.</p>
+</section>
+<section id="parameters">
+<h2>Parameters<a class="headerlink" href="#parameters" title="Link to this heading">¶</a></h2>
+<dl class="simple">
+<dt>F_opt<span class="classifier">numpy-ndarray of complex float</span></dt><dd><p>array of complex floats of length M, corresponding to M number of elements
+for the ideal beamforming vector.</p>
+</dd>
+<dt>A_can<span class="classifier">numpy-ndarray of complex float</span></dt><dd><p>matrix whose columns are the possible beamforming vectors which may be 
+aggregated to form new ones.  In most cases, this is just the set of narrowest
+beamforming vectors.</p>
+</dd>
+<dt>num_rf_chains<span class="classifier">int</span></dt><dd><p>number of analog-to-digital or digital-to-analog converters in receiver
+or transmitter architecture.  Many applications assume a 1-to-1 ratio
+of possible simultaneous users to the number of RF chains, hence we fix
+the number of number of data streams to 1 (next parameter).</p>
+</dd>
+<dt>num_data_streams<span class="classifier">int</span></dt><dd><p>number of data streams (simultaneous users) of the channel.</p>
+</dd>
+</dl>
+</section>
+<section id="returns">
+<h2>Returns<a class="headerlink" href="#returns" title="Link to this heading">¶</a></h2>
+<dl class="simple">
+<dt>F_bb<span class="classifier">numpy-ndarray of complex float</span></dt><dd><p>Matrix of complex floats of dimension num_data_streams X num_rf_chains
+which is the baseband precoding (decoding) digital matrix.</p>
+</dd>
+<dt>F_rf<span class="classifier">numpy-ndarray of complex float</span></dt><dd><p>Matrix of complex floats of dimension num_rf_chains X M (number of elements)
+which is the RF analog beamforming set of weights.</p>
+</dd>
+<dt>F<span class="classifier">numpy-ndarray of complex float</span></dt><dd><p>Hybrid beamforming vector, which is the product of <a class="reference external" href="mailto:F_bb&#37;&#52;&#48;F_rf">F_bb<span>&#64;</span>F_rf</a></p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mlcomm.codebooks.load_codebook">
+<span class="sig-prename descclassname"><span class="pre">mlcomm.codebooks.</span></span><span class="sig-name descname"><span class="pre">load_codebook</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loadpath</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.codebooks.load_codebook" title="Link to this definition">¶</a></dt>
+<dd><section id="id7">
+<h2>Description<a class="headerlink" href="#id7" title="Link to this heading">¶</a></h2>
+<p>Load cb_graph for use.</p>
+</section>
+<section id="id8">
+<h2>Parameters<a class="headerlink" href="#id8" title="Link to this heading">¶</a></h2>
+<dl class="simple">
+<dt>filename<span class="classifier">string</span></dt><dd><p>Name of save pickle file.</p>
+</dd>
+<dt>loadpath<span class="classifier">string, optional</span></dt><dd><p>The default is ‘./’.</p>
+</dd>
+</dl>
+</section>
+<section id="id9">
+<h2>Returns<a class="headerlink" href="#id9" title="Link to this heading">¶</a></h2>
+<dl class="simple">
+<dt>cb_graph<span class="classifier">object </span></dt><dd><p>Type instance of BinaryHierarchicalCodebook or TrinaryPointedHierarchicalCodebook.  See description of class types.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mlcomm.codebooks.main">
+<span class="sig-prename descclassname"><span class="pre">mlcomm.codebooks.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.codebooks.main" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mlcomm.codebooks.quantize">
+<span class="sig-prename descclassname"><span class="pre">mlcomm.codebooks.</span></span><span class="sig-name descname"><span class="pre">quantize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">M</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Nq</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.codebooks.quantize" title="Link to this definition">¶</a></dt>
+<dd><section id="id10">
+<h2>Description<a class="headerlink" href="#id10" title="Link to this heading">¶</a></h2>
+<p>Quantizes with respect to nearest complex numbered value.  Relevant to 
+coarse analog phase shifters that may have finite granularity to phase values.</p>
+</section>
+<section id="id11">
+<h2>Parameters<a class="headerlink" href="#id11" title="Link to this heading">¶</a></h2>
+<dl class="simple">
+<dt>X<span class="classifier">numpy ndarray</span></dt><dd><p>matrix of complex floats which we loop through and quantize each element.</p>
+</dd>
+<dt>M<span class="classifier">int</span></dt><dd><p>Number of antenna elements in array, important due to element normalization.
+Not used in codebook constructions.</p>
+</dd>
+<dt>Nq<span class="classifier">int</span></dt><dd><p>Number of quantization levels, i.e. 2**Nq.</p>
+</dd>
+</dl>
+</section>
+<section id="id12">
+<h2>Returns<a class="headerlink" href="#id12" title="Link to this heading">¶</a></h2>
+<dl class="simple">
+<dt>Xq<span class="classifier">numpy ndarray</span></dt><dd><p>quantized matrix of complex floats which we looped through and quantized each element.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mlcomm.codebooks.save_codebook">
+<span class="sig-prename descclassname"><span class="pre">mlcomm.codebooks.</span></span><span class="sig-name descname"><span class="pre">save_codebook</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cb_graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">savepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'./'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.codebooks.save_codebook" title="Link to this definition">¶</a></dt>
+<dd><section id="id13">
+<h2>Description<a class="headerlink" href="#id13" title="Link to this heading">¶</a></h2>
+<p>Save cb_graph for later use. Often faster than intial creation.</p>
+</section>
+<section id="id14">
+<h2>Parameters<a class="headerlink" href="#id14" title="Link to this heading">¶</a></h2>
+<dl class="simple">
+<dt>cb_graph<span class="classifier">object </span></dt><dd><p>Type instance of BinaryHierarchicalCodebook or TrinaryPointedHierarchicalCodebook.  See description of class types.</p>
+</dd>
+<dt>filename<span class="classifier">string</span></dt><dd><p>Name of save pickle file.</p>
+</dd>
+<dt>savepath<span class="classifier">string, optional</span></dt><dd><p>The default is ‘./’.</p>
+</dd>
+</dl>
+</section>
+<section id="id15">
+<h2>Returns<a class="headerlink" href="#id15" title="Link to this heading">¶</a></h2>
+<p>None.</p>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mlcomm.codebooks.show_level">
+<span class="sig-prename descclassname"><span class="pre">mlcomm.codebooks.</span></span><span class="sig-name descname"><span class="pre">show_level</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cb_graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hh</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.codebooks.show_level" title="Link to this definition">¶</a></dt>
+<dd><section id="id16">
+<h2>Description<a class="headerlink" href="#id16" title="Link to this heading">¶</a></h2>
+<p>Shows all beamforming vectors at a particular level.</p>
+</section>
+<section id="id17">
+<h2>Parameters<a class="headerlink" href="#id17" title="Link to this heading">¶</a></h2>
+<dl class="simple">
+<dt>cb_graph<span class="classifier">object </span></dt><dd><p>Type instance of BinaryHierarchicalCodebook or TrinaryPointedHierarchicalCodebook.  See description of class types.</p>
+</dd>
+<dt>hh<span class="classifier">int</span></dt><dd><p>Level which user wishes to view.</p>
+</dd>
+</dl>
+</section>
+<section id="id18">
+<h2>Returns<a class="headerlink" href="#id18" title="Link to this heading">¶</a></h2>
+<p>None.</p>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mlcomm.codebooks.show_level_base_set">
+<span class="sig-prename descclassname"><span class="pre">mlcomm.codebooks.</span></span><span class="sig-name descname"><span class="pre">show_level_base_set</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cb_graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hh</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.codebooks.show_level_base_set" title="Link to this definition">¶</a></dt>
+<dd><section id="id19">
+<h2>Description<a class="headerlink" href="#id19" title="Link to this heading">¶</a></h2>
+<p>Shows all base set beamforming vectors at a particular level. That is, the set that minimally covers the 
+coverage region specified, and the zoom-in beamforming vectors for each successive level.</p>
+</section>
+<section id="id20">
+<h2>Parameters<a class="headerlink" href="#id20" title="Link to this heading">¶</a></h2>
+<dl class="simple">
+<dt>cb_graph<span class="classifier">object </span></dt><dd><p>Type instance of BinaryHierarchicalCodebook or TrinaryPointedHierarchicalCodebook.  See description of class types.</p>
+</dd>
+<dt>hh<span class="classifier">int</span></dt><dd><p>Level which user wishes to view.</p>
+</dd>
+</dl>
+</section>
+<section id="id21">
+<h2>Returns<a class="headerlink" href="#id21" title="Link to this heading">¶</a></h2>
+<p>None.</p>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mlcomm.codebooks.show_zoom_in">
+<span class="sig-prename descclassname"><span class="pre">mlcomm.codebooks.</span></span><span class="sig-name descname"><span class="pre">show_zoom_in</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cb_graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ii</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.codebooks.show_zoom_in" title="Link to this definition">¶</a></dt>
+<dd><section id="id22">
+<h2>Description<a class="headerlink" href="#id22" title="Link to this heading">¶</a></h2>
+<p>Shows all zoom-in beamforming vectors for a particular beamforming vector i. That is, the set that minimally covers the 
+coverage region specified, and the zoom-in beamforming vectors for each successive level.</p>
+</section>
+<section id="id23">
+<h2>Parameters<a class="headerlink" href="#id23" title="Link to this heading">¶</a></h2>
+<dl class="simple">
+<dt>cb_graph<span class="classifier">object </span></dt><dd><p>Type instance of BinaryHierarchicalCodebook or TrinaryPointedHierarchicalCodebook.  See description of class types.</p>
+</dd>
+<dt>ii<span class="classifier">int</span></dt><dd><p>Index which user wishes to view.</p>
+</dd>
+</dl>
+</section>
+<section id="id24">
+<h2>Returns<a class="headerlink" href="#id24" title="Link to this heading">¶</a></h2>
+<p>None.</p>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="mlcomm.codebooks.show_zoom_out">
+<span class="sig-prename descclassname"><span class="pre">mlcomm.codebooks.</span></span><span class="sig-name descname"><span class="pre">show_zoom_out</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cb_graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ii</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.codebooks.show_zoom_out" title="Link to this definition">¶</a></dt>
+<dd><section id="id25">
+<h2>Description<a class="headerlink" href="#id25" title="Link to this heading">¶</a></h2>
+<p>Shows zoom-out beamforming vector patterns for all beamforming vectors with index i, meaning common steered angle.</p>
+</section>
+<section id="id26">
+<h2>Parameters<a class="headerlink" href="#id26" title="Link to this heading">¶</a></h2>
+<dl class="simple">
+<dt>cb_graph<span class="classifier">object </span></dt><dd><p>Type instance of BinaryHierarchicalCodebook or TrinaryPointedHierarchicalCodebook.  See description of class types.</p>
+</dd>
+<dt>ii<span class="classifier">int</span></dt><dd><p>Index which user wishes to view.</p>
+</dd>
+</dl>
+</section>
+<section id="id27">
+<h2>Returns<a class="headerlink" href="#id27" title="Link to this heading">¶</a></h2>
+<p>None.</p>
+</section>
+</dd></dl>
+
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/gtlogo.png" alt="Logo"/>
+            </a></p>
+<h1 class="logo"><a href="../index.html">mlcomm</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../setup_and_installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Functional Blocks</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">mlcomm.codebooks</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#mlcomm.codebooks.BinaryHierarchicalCodebook"><code class="docutils literal notranslate"><span class="pre">BinaryHierarchicalCodebook</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#mlcomm.codebooks.Node"><code class="docutils literal notranslate"><span class="pre">Node</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#mlcomm.codebooks.TrinaryPointedHierarchicalCodebook"><code class="docutils literal notranslate"><span class="pre">TrinaryPointedHierarchicalCodebook</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#mlcomm.codebooks.build_hybrid_vector"><code class="docutils literal notranslate"><span class="pre">build_hybrid_vector()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#mlcomm.codebooks.load_codebook"><code class="docutils literal notranslate"><span class="pre">load_codebook()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#mlcomm.codebooks.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#mlcomm.codebooks.quantize"><code class="docutils literal notranslate"><span class="pre">quantize()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#mlcomm.codebooks.save_codebook"><code class="docutils literal notranslate"><span class="pre">save_codebook()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#mlcomm.codebooks.show_level"><code class="docutils literal notranslate"><span class="pre">show_level()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#mlcomm.codebooks.show_level_base_set"><code class="docutils literal notranslate"><span class="pre">show_level_base_set()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#mlcomm.codebooks.show_zoom_in"><code class="docutils literal notranslate"><span class="pre">show_zoom_in()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#mlcomm.codebooks.show_zoom_out"><code class="docutils literal notranslate"><span class="pre">show_zoom_out()</span></code></a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="../setup_and_installation.html" title="previous chapter">Installation</a></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2024, Georgia Institute of Technology.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.3.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+      |
+      <a href="../_sources/functional_blocks/codebooks.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

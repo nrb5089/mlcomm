@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>mlcomm.algorithms &#8212; mlcomm 0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=12dfc556" />
+    <script src="_static/documentation_options.js?v=2709fde1"></script>
+    <script src="_static/doctools.js?v=9a2dae69"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="mlcomm.codebooks" href="codebooks.html" />
+    <link rel="prev" title="Installation" href="setup_and_installation.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <img alt="_images/atl2077_gold_cell.png" src="_images/atl2077_gold_cell.png" />
+<section id="module-mlcomm.algorithms">
+<span id="mlcomm-algorithms"></span><h1>mlcomm.algorithms<a class="headerlink" href="#module-mlcomm.algorithms" title="Link to this heading">¶</a></h1>
+<p>Adaptive Communication Decision and Information Systems (ACDIS) - User License
+<a class="reference external" href="https://bloch.ece.gatech.edu/researchgroup/">https://bloch.ece.gatech.edu/researchgroup/</a></p>
+<p>Copyright (c) 2024-2025 Georgia Institute of Technology</p>
+<p>Permission is hereby granted, free of charge, to any person obtaining a 
+copy of this software and associated documentation files (the “Software”),
+to deal in the Software without restriction, including without limitation 
+the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+and/or sell copies of the Software, and to permit persons to whom the 
+Software is furnished to do so, subject to the following conditions:</p>
+<p>The above copyright notice and this permission notice shall be included
+in all copies or substantial portions of the Software. Users shall cite 
+ACDIS publications regarding this work.</p>
+<p>THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL 
+THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR 
+OTHER LIABILITY, WHETHER INANACTION OF CONTRACT TORT OR OTHERWISE, 
+ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR 
+OTHER DEALINGS IN THE SOFTWARE.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="mlcomm.algorithms.ABT">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mlcomm.algorithms.</span></span><span class="sig-name descname"><span class="pre">ABT</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.algorithms.ABT" title="Link to this definition">¶</a></dt>
+<dd><p>Adaptive Beam Tracking (ABT) from [1], uses initial alignment from HPM algorithm in [2]</p>
+<p>[1] Ronquillo, Nancy, and Tara Javidi. “Active beam tracking under stochastic mobility.” ICC 2021-IEEE International Conference on Communications. IEEE, 2021.
+[2] Chiu, Sung-En, Nancy Ronquillo, and Tara Javidi. “Active learning and CSI acquisition for mmWave initial alignment.” IEEE Journal on Selected Areas in Communications 37.11 (2019): 2474-2489.</p>
+<section id="notes">
+<h2>Notes<a class="headerlink" href="#notes" title="Link to this heading">¶</a></h2>
+<p>FixedV does not work.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="mlcomm.algorithms.ABT.run_alg">
+<span class="sig-name descname"><span class="pre">run_alg</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time_horizon</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.algorithms.ABT.run_alg" title="Link to this definition">¶</a></dt>
+<dd><p>Executes the HPM algorithm for the simulation and logs various data points.</p>
+<p>This method runs the core HPM algorithm, capturing key data points at various stages of the process. 
+The logged data is stored in a dictionary and returned at the end of the method execution.</p>
+<section id="parameters">
+<h3>Parameters<a class="headerlink" href="#parameters" title="Link to this heading">¶</a></h3>
+<dl class="simple">
+<dt>time_horizon<span class="classifier">int</span></dt><dd><p>Number of timesteps to track the moving entity</p>
+</dd>
+</dl>
+</section>
+<section id="returns">
+<h3>Returns<a class="headerlink" href="#returns" title="Link to this heading">¶</a></h3>
+<dl class="simple">
+<dt>dict</dt><dd><p>A dictionary containing logged data from the simulation run.
+The keys in the dictionary represent different data points, and the values represent the recorded data for those points.</p>
+</dd>
+</dl>
+</section>
+<section id="raises">
+<h3>Raises<a class="headerlink" href="#raises" title="Link to this heading">¶</a></h3>
+<dl class="simple">
+<dt>SimulationError</dt><dd><p>If the simulation encounters an error during execution.</p>
+</dd>
+</dl>
+</section>
+<section id="example">
+<h3>Example<a class="headerlink" href="#example" title="Link to this heading">¶</a></h3>
+<blockquote>
+<div><p>log_data = run_alg()
+print(log_data[“relative_spectral_efficiency”])</p>
+</div></blockquote>
+</section>
+</dd></dl>
+
+</section>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="mlcomm.algorithms.AlgorithmTemplate">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mlcomm.algorithms.</span></span><span class="sig-name descname"><span class="pre">AlgorithmTemplate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.algorithms.AlgorithmTemplate" title="Link to this definition">¶</a></dt>
+<dd><section id="description">
+<h2>Description<a class="headerlink" href="#description" title="Link to this heading">¶</a></h2>
+<p>AlgorithmTemplate is a class to represent the simulation of an algorithm 
+that interacts with a communication channel and an associated codebook graph.</p>
+</section>
+<section id="attributes">
+<h2>Attributes<a class="headerlink" href="#attributes" title="Link to this heading">¶</a></h2>
+<dl class="simple">
+<dt>cb_graph<span class="classifier">object</span></dt><dd><p>The codebook graph associated with the simulation.</p>
+</dd>
+<dt>channel<span class="classifier">object</span></dt><dd><p>The communication channel used in the simulation.</p>
+</dd>
+<dt>best_midx<span class="classifier">int</span></dt><dd><p>midx corresponding to the node with the highest mean_reward</p>
+</dd>
+<dt>log_dat<span class="classifier">dict</span></dt><dd><p>Algorithm-specific dictionary for storing simulation data.</p>
+</dd>
+</dl>
+</section>
+<section id="methods">
+<h2>Methods<a class="headerlink" href="#methods" title="Link to this heading">¶</a></h2>
+<dl class="simple">
+<dt>sample(self, node, with_noise=True):</dt><dd><p>Samples the node’s response with optional noise.</p>
+</dd>
+<dt>set_best(self)</dt><dd><p>sets attribute best_midx, the midx with the largest mean reward</p>
+</dd>
+<dt>calculate_relative_spectral_efficiency(self,node)</dt><dd><p>Calculates the relative spectral efficiency with respect to the node with the highest mean rewards</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="mlcomm.algorithms.AlgorithmTemplate.calculate_relative_spectral_efficiency">
+<span class="sig-name descname"><span class="pre">calculate_relative_spectral_efficiency</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.algorithms.AlgorithmTemplate.calculate_relative_spectral_efficiency" title="Link to this definition">¶</a></dt>
+<dd><section id="id1">
+<h3>Description<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h3>
+<p>Calculates relative spectral efficiency with respect to node specified and node with highest mean reward, attribute best_node</p>
+</section>
+<section id="id2">
+<h3>Parameters<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h3>
+<dl class="simple">
+<dt>node<span class="classifier">object</span></dt><dd><p>The node to be used in the relative spectral efficiency calculation.</p>
+</dd>
+</dl>
+</section>
+<section id="id3">
+<h3>Returns<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h3>
+<dl class="simple">
+<dt>float</dt><dd><p>The relative spectral efficiency.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mlcomm.algorithms.AlgorithmTemplate.sample">
+<span class="sig-name descname"><span class="pre">sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transmit_power_dbw</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">with_noise</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'rss'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.algorithms.AlgorithmTemplate.sample" title="Link to this definition">¶</a></dt>
+<dd><section id="id4">
+<h3>Description<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h3>
+<p>Samples the node’s response with optional noise.</p>
+<p>This method computes the absolute squared value of the conjugate
+transpose of the node’s field vector multiplied by the channel’s array 
+response. Noise can be optionally included in the computation.</p>
+</section>
+<section id="id5">
+<h3>Parameters<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h3>
+<dl class="simple">
+<dt>node<span class="classifier">object</span></dt><dd><p>The node to be sampled.</p>
+</dd>
+<dt>transmit_power_dbw<span class="classifier">float</span></dt><dd><p>Transmit power over the channel in dbw, not required for BasicChannel</p>
+</dd>
+<dt>with_noise<span class="classifier">bool, optional</span></dt><dd><p>A flag to indicate whether noise should be included in the sample 
+(default is True).</p>
+</dd>
+<dt>mode<span class="classifier">str</span></dt><dd><p>Valid choices are ‘rss’ and ‘complex’, default to ‘rss’.  Dictates reward returned, some Bayesian algorithms require complex value.</p>
+</dd>
+</dl>
+</section>
+<section id="id6">
+<h3>Returns<a class="headerlink" href="#id6" title="Link to this heading">¶</a></h3>
+<dl class="simple">
+<dt>float</dt><dd><p>The absolute squared value of the sampled response or complex value within.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mlcomm.algorithms.AlgorithmTemplate.set_best">
+<span class="sig-name descname"><span class="pre">set_best</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.algorithms.AlgorithmTemplate.set_best" title="Link to this definition">¶</a></dt>
+<dd><section id="id7">
+<h3>Description<a class="headerlink" href="#id7" title="Link to this heading">¶</a></h3>
+<p>Sets the attribute best_midx, which is the midx belonging to the node with the highest mean reward.</p>
+</section>
+</dd></dl>
+
+</section>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="mlcomm.algorithms.DBZ">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mlcomm.algorithms.</span></span><span class="sig-name descname"><span class="pre">DBZ</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.algorithms.DBZ" title="Link to this definition">¶</a></dt>
+<dd><p>Dynamic Beam Zooming (DBZ) takes a hierarchical approach to intial alignment and beam tracking for an integrated sensing and communication approach.  
+DBZ uses a base algorithm, Lower-Upper Confidence Bound (LUCB) [1,2] for best arm identification in fixed confidence.  May be run in the traditional sense, where all
+sample over time are considered for the mean, or a sample window length is specified where only recent samples are considered. The 
+latter is used for non-stationary reward structures.  Different from [1,2], we are only interested in sets of arms with cardinality 1.</p>
+<p>Our confidence term and exploration rate differ due to the reward probability distribution.</p>
+<p>[1] Kalyanakrishnan, Shivaram, et al. “PAC subset selection in stochastic multi-armed bandits.” ICML. Vol. 12. 2012.
+[2] Gabillon, Victor, Mohammad Ghavamzadeh, and Alessandro Lazaric. “Best arm identification: A unified approach to fixed budget and fixed confidence.” Advances in Neural Information Processing Systems 25 (2012).</p>
+<section id="id8">
+<h2>Parameters<a class="headerlink" href="#id8" title="Link to this heading">¶</a></h2>
+<dl class="simple">
+<dt>params<span class="classifier">dict</span></dt><dd><p>dict with params</p>
+</dd>
+</dl>
+</section>
+<section id="id9">
+<h2>Attributes<a class="headerlink" href="#id9" title="Link to this heading">¶</a></h2>
+<dl class="simple">
+<dt>cb_graph<span class="classifier">object</span></dt><dd><p>The codebook graph associated with the simulation.</p>
+</dd>
+<dt>delta<span class="classifier">float</span></dt><dd><p>confidence term</p>
+</dd>
+<dt>epsilon<span class="classifier">float</span></dt><dd><p>tolerance term that is scaled based on the level h</p>
+</dd>
+<dt>mode<span class="classifier">str</span></dt><dd><p>Specifies ‘stationary’ or ‘non-stationary’ setting, either or is a valid entry</p>
+</dd>
+<dt>p<span class="classifier">nparray </span></dt><dd><p>array of 1s and 0s indicating which levels to play</p>
+</dd>
+<dt>W<span class="classifier">nparray of ints</span></dt><dd><p>array where each element indicates the sample window length associated with the particular level</p>
+</dd>
+<dt>a<span class="classifier">float</span></dt><dd><p>Threshold parameter</p>
+</dd>
+<dt>b<span class="classifier">float</span></dt><dd><p>First confidence parameter</p>
+</dd>
+<dt>c<span class="classifier">float </span></dt><dd><p>Secondary confidence parameter</p>
+</dd>
+</dl>
+</section>
+<section id="id10">
+<h2>Notes<a class="headerlink" href="#id10" title="Link to this heading">¶</a></h2>
+</section>
+<section id="id11">
+<h2>Example<a class="headerlink" href="#id11" title="Link to this heading">¶</a></h2>
+<p>bandit = DBZ({‘cb_graph’ : cb_graph, ‘channel’ : channel, ‘delta’ : .1, ‘epsilon’, .001, ‘mode’ : stationary, levels_to_play’ : [1,1,1,1], ‘a’ : 1, ‘b’ : .1, ‘c’ : .1})</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="mlcomm.algorithms.DBZ.get_gamma_u">
+<span class="sig-name descname"><span class="pre">get_gamma_u</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">current_midxs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.algorithms.DBZ.get_gamma_u" title="Link to this definition">¶</a></dt>
+<dd><section id="id12">
+<h3>Description<a class="headerlink" href="#id12" title="Link to this heading">¶</a></h3>
+<p>Determines the midx corresponding to gamma and u from the LUCB algorithm.  gamma and u correspond to the largest LCB and the largest UCB that is not 
+the same midx as gamma.</p>
+</section>
+<section id="id13">
+<h3>Parameters<a class="headerlink" href="#id13" title="Link to this heading">¶</a></h3>
+<dl class="simple">
+<dt>nn<span class="classifier">int</span></dt><dd><p>time step of the algorithm</p>
+</dd>
+<dt>current_midxs<span class="classifier">list or array </span></dt><dd><p>midxs corresponding to cb_graph object attribute in which the bandit game will play those nodes</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mlcomm.algorithms.DBZ.initialize">
+<span class="sig-name descname"><span class="pre">initialize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">current_midxs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.algorithms.DBZ.initialize" title="Link to this definition">¶</a></dt>
+<dd><section id="id14">
+<h3>Description<a class="headerlink" href="#id14" title="Link to this heading">¶</a></h3>
+<p>Samples all nodes within current_midxs twice, and determines initial gamma and u from the LUCB algorithm.  gamma and u correspond to the largest LCB and the largest UCB that is not 
+the same midx as gamma.</p>
+</section>
+<section id="id15">
+<h3>Parameters<a class="headerlink" href="#id15" title="Link to this heading">¶</a></h3>
+<dl class="simple">
+<dt>current_midxs<span class="classifier">list or array </span></dt><dd><p>midxs corresponding to cb_graph object attribute in which the bandit game will play those nodes</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mlcomm.algorithms.DBZ.perform_sample_update_channel">
+<span class="sig-name descname"><span class="pre">perform_sample_update_channel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node_to_sample</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.algorithms.DBZ.perform_sample_update_channel" title="Link to this definition">¶</a></dt>
+<dd><section id="id16">
+<h3>Description<a class="headerlink" href="#id16" title="Link to this heading">¶</a></h3>
+<p>Wrapper function to perform operations necessary during sampling.</p>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mlcomm.algorithms.DBZ.run_alg">
+<span class="sig-name descname"><span class="pre">run_alg</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time_horizon</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.algorithms.DBZ.run_alg" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mlcomm.algorithms.DBZ.sampling_iteration">
+<span class="sig-name descname"><span class="pre">sampling_iteration</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gamma_midx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">u_midx</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.algorithms.DBZ.sampling_iteration" title="Link to this definition">¶</a></dt>
+<dd><section id="id17">
+<h3>Description<a class="headerlink" href="#id17" title="Link to this heading">¶</a></h3>
+<p>Subordinate algorithm for sampling in LUCB algorithms.  If there is only one arm being considered for sampling, which will happen when the active beam is one of the narrowest beamforming patterns, sample it.
+Otherwise, proceed through the selection process outlined in [1,2]</p>
+</section>
+<section id="id18">
+<h3>Parameters<a class="headerlink" href="#id18" title="Link to this heading">¶</a></h3>
+<dl class="simple">
+<dt>nn<span class="classifier">int</span></dt><dd><p>time step of the algorithm</p>
+</dd>
+<dt>gamma_midx<span class="classifier">int </span></dt><dd><p>corresponds to the largest LCB</p>
+</dd>
+<dt>u_midx<span class="classifier">int</span></dt><dd><p>corresponds to the largest UCB that is not gamma_midx, determined with method ‘get_gamma_u’</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mlcomm.algorithms.DBZ.update_node">
+<span class="sig-name descname"><span class="pre">update_node</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.algorithms.DBZ.update_node" title="Link to this definition">¶</a></dt>
+<dd><section id="id19">
+<h3>Description<a class="headerlink" href="#id19" title="Link to this heading">¶</a></h3>
+<p>Updates the node’s sample history, and deletes “old” samples as specified by the sampling window length “W”</p>
+<p>In the non-stationary setting, this “ages out” older samples of other nodes</p>
+</section>
+<section id="id20">
+<h3>Parameters<a class="headerlink" href="#id20" title="Link to this heading">¶</a></h3>
+<dl class="simple">
+<dt>node<span class="classifier">object</span></dt><dd><p>The node to be updated.</p>
+</dd>
+<dt>r<span class="classifier">float</span></dt><dd><p>The new sample reward.</p>
+</dd>
+</dl>
+</section>
+<section id="id21">
+<h3>Returns<a class="headerlink" href="#id21" title="Link to this heading">¶</a></h3>
+<p>None</p>
+</section>
+</dd></dl>
+
+</section>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="mlcomm.algorithms.HOSUB">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mlcomm.algorithms.</span></span><span class="sig-name descname"><span class="pre">HOSUB</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.algorithms.HOSUB" title="Link to this definition">¶</a></dt>
+<dd><section id="id22">
+<h2>Description<a class="headerlink" href="#id22" title="Link to this heading">¶</a></h2>
+<p>Hierarchical Optimal Sampling for Unimodal Bandits (HOSUB) [1] is a class that extends 
+AlgorithmTemplate to implement a hierarchical optimization algorithm for selecting 
+the best beamforming vector.  HOSUB is find the best arm in a user-designated fixed 
+bugdet of time steps, where one sample is taken each time step.</p>
+<p>[1] Blinn, Nathan, Jana Boerger, and Matthieu Bloch. “mmWave Beam Steering with Hierarchical Optimal Sampling for Unimodal Bandits.” ICC 2021-IEEE International Conference on Communications. IEEE, 2021.</p>
+</section>
+<section id="id23">
+<h2>Attributes<a class="headerlink" href="#id23" title="Link to this heading">¶</a></h2>
+<dl class="simple">
+<dt>cb_graph<span class="classifier">object</span></dt><dd><p>The codebook graph associated with the simulation.</p>
+</dd>
+<dt>N<span class="classifier">int</span></dt><dd><p>Time horizon for the algorithm.</p>
+</dd>
+<dt>h0<span class="classifier">int</span></dt><dd><p>Starting level in the hierarchical structure.</p>
+</dd>
+<dt>c<span class="classifier">float</span></dt><dd><p>Exploration-exploitation trade-off parameter.</p>
+</dd>
+<dt>delta<span class="classifier">float</span></dt><dd><p>Confidence parameter for upper confidence bound calculations.</p>
+</dd>
+</dl>
+</section>
+<section id="id24">
+<h2>Methods<a class="headerlink" href="#id24" title="Link to this heading">¶</a></h2>
+<dl class="simple">
+<dt>__init__(self, params):</dt><dd><p>Initializes the HOSUB algorithm with the provided parameters.</p>
+</dd>
+<dt>run_alg(self):</dt><dd><p>Runs the HOSUB algorithm to find the best beamforming vector.</p>
+</dd>
+<dt>update_node(self, node, r):</dt><dd><p>Updates the node’s empirical mean reward and upper confidence bound.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="mlcomm.algorithms.HOSUB.run_alg">
+<span class="sig-name descname"><span class="pre">run_alg</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.algorithms.HOSUB.run_alg" title="Link to this definition">¶</a></dt>
+<dd><section id="id25">
+<h3>Description<a class="headerlink" href="#id25" title="Link to this heading">¶</a></h3>
+<p>Runs the HOSUB algorithm to find the best beamforming vector.</p>
+<p>This method iteratively selects and samples nodes in the codebook graph,
+updating their empirical mean rewards and upper confidence bounds, until
+the time horizon is reached or the narrowest beamforming vector is found.</p>
+</section>
+<section id="id26">
+<h3>Returns<a class="headerlink" href="#id26" title="Link to this heading">¶</a></h3>
+<dl class="simple">
+<dt>int</dt><dd><p>The midx corresponding to the estimated best beamforming vector as indexed by the codebook graph.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mlcomm.algorithms.HOSUB.update_node">
+<span class="sig-name descname"><span class="pre">update_node</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.algorithms.HOSUB.update_node" title="Link to this definition">¶</a></dt>
+<dd><section id="id27">
+<h3>Description<a class="headerlink" href="#id27" title="Link to this heading">¶</a></h3>
+<p>Updates the node’s empirical mean reward and upper confidence bound.</p>
+<p>This method updates the number of pulls, empirical mean reward, and upper
+confidence bound for the specified node based on the new sample reward.</p>
+</section>
+<section id="id28">
+<h3>Parameters<a class="headerlink" href="#id28" title="Link to this heading">¶</a></h3>
+<dl class="simple">
+<dt>node<span class="classifier">object</span></dt><dd><p>The node to be updated.</p>
+</dd>
+<dt>r<span class="classifier">float</span></dt><dd><p>The new sample reward.</p>
+</dd>
+</dl>
+</section>
+<section id="id29">
+<h3>Returns<a class="headerlink" href="#id29" title="Link to this heading">¶</a></h3>
+<p>None</p>
+</section>
+</dd></dl>
+
+</section>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="mlcomm.algorithms.HPM">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mlcomm.algorithms.</span></span><span class="sig-name descname"><span class="pre">HPM</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.algorithms.HPM" title="Link to this definition">¶</a></dt>
+<dd><section id="id30">
+<h2>Description<a class="headerlink" href="#id30" title="Link to this heading">¶</a></h2>
+<p>Implements the Hierarchical Posterior Matching (HPM) [1] algorithm.  Given our fixed codebook resolution, we only use the
+fixed resolution (FR) impelmentation in their algorithm.</p>
+<dl class="simple">
+<dt>[1] Chiu, Sung-En, Nancy Ronquillo, and Tara Javidi. “Active learning and CSI acquisition for mmWave initial alignment.” </dt><dd><p>IEEE Journal on Selected Areas in Communications 37.11 (2019): 2474-2489.</p>
+</dd>
+</dl>
+</section>
+<section id="id31">
+<h2>Attributes<a class="headerlink" href="#id31" title="Link to this heading">¶</a></h2>
+<dl class="simple">
+<dt>delta<span class="classifier">float</span></dt><dd><p>The target confidence for the algorithm.</p>
+</dd>
+<dt>fading_estimation<span class="classifier">str</span></dt><dd><p>Fading estimation mode, valid choices are ‘exact’, ‘estimate’, and ‘unitary’</p>
+</dd>
+<dt>mode<span class="classifier">str</span></dt><dd><p>Fixed length (FL) or variable length (VL) where the algorithm stops after a certain number of timesteps or after achieving confidence 1-delta</p>
+</dd>
+</dl>
+</section>
+<section id="id32">
+<h2>Notes<a class="headerlink" href="#id32" title="Link to this heading">¶</a></h2>
+<p>Works only with binary tree codebook.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="mlcomm.algorithms.HPM.run_alg">
+<span class="sig-name descname"><span class="pre">run_alg</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.algorithms.HPM.run_alg" title="Link to this definition">¶</a></dt>
+<dd><p>Executes the HPM algorithm for the simulation and logs various data points.</p>
+<p>This method runs the core HPM algorithm, capturing key data points at various stages of the process. 
+The logged data is stored in a dictionary and returned at the end of the method execution.</p>
+<section id="id33">
+<h3>Returns<a class="headerlink" href="#id33" title="Link to this heading">¶</a></h3>
+<dl class="simple">
+<dt>dict</dt><dd><p>A dictionary containing logged data from the simulation run.
+The keys in the dictionary represent different data points, and the values represent the recorded data for those points.</p>
+</dd>
+</dl>
+</section>
+<section id="id34">
+<h3>Raises<a class="headerlink" href="#id34" title="Link to this heading">¶</a></h3>
+<dl class="simple">
+<dt>SimulationError</dt><dd><p>If the simulation encounters an error during execution.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+</section>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="mlcomm.algorithms.MotionTS">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mlcomm.algorithms.</span></span><span class="sig-name descname"><span class="pre">MotionTS</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.algorithms.MotionTS" title="Link to this definition">¶</a></dt>
+<dd><section id="id35">
+<h2>Description<a class="headerlink" href="#id35" title="Link to this heading">¶</a></h2>
+<p>Phased Track and Stop Beamforming approach from where only recent samples are considered.  In the case that an empirical mean chosen is less than any previous
+level’s, zoom out.</p>
+</section>
+<section id="id36">
+<h2>Parameters<a class="headerlink" href="#id36" title="Link to this heading">¶</a></h2>
+<dl class="simple">
+<dt>params<span class="classifier">dict</span></dt><dd><p>A dictionary of parameters for initializing the NPHTS algorithm. 
+Must include ‘levels_to_play’, ‘delta’, and ‘epsilon’.</p>
+<ul class="simple">
+<li><dl class="simple">
+<dt>levels_to_play: List[int]</dt><dd><p>A list indicating the levels to be played in the algorithm.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>delta: List[float]</dt><dd><p>A list of delta values for each level.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>epsilon: float</dt><dd><p>The epsilon value for the algorithm.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+</section>
+<section id="id37">
+<h2>Raises<a class="headerlink" href="#id37" title="Link to this heading">¶</a></h2>
+<dl class="simple">
+<dt>AssertionError</dt><dd><p>If the length of ‘levels_to_play’ does not match the length of ‘delta’.
+If the last element of ‘levels_to_play’ is not 1.</p>
+</dd>
+</dl>
+</section>
+<section id="id38">
+<h2>Methods<a class="headerlink" href="#id38" title="Link to this heading">¶</a></h2>
+<dl class="simple">
+<dt>__init__(self, params):</dt><dd><p>Initializes the NPHTS algorithm with the provided parameters.</p>
+</dd>
+<dt>run_alg(self):</dt><dd><p>Runs the NPHTS algorithm to find the best beamforming vector.</p>
+</dd>
+</dl>
+</section>
+<section id="id39">
+<h2>Notes<a class="headerlink" href="#id39" title="Link to this heading">¶</a></h2>
+<p>Relies on the TASD class for the update_node method.</p>
+<p>Slightly modified from the implementation in [3] which has a fixed two-phase approach, whereas here we
+allow the user to select which levels to play by the key in params ‘levels_to_play’.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="mlcomm.algorithms.MotionTS.run_alg">
+<span class="sig-name descname"><span class="pre">run_alg</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time_horizon</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.algorithms.MotionTS.run_alg" title="Link to this definition">¶</a></dt>
+<dd><section id="id40">
+<h3>Description<a class="headerlink" href="#id40" title="Link to this heading">¶</a></h3>
+<p>Runs the algorithm to find the best beamforming vector.</p>
+<p>This method implements the core logic of the NPHTS algorithm, leveraging 
+the parameters initialized in the __init__ method.</p>
+</section>
+<section id="id41">
+<h3>Returns<a class="headerlink" href="#id41" title="Link to this heading">¶</a></h3>
+<dl class="simple">
+<dt>int</dt><dd><p>The midx corresponding to the estimated best beamforming vector as indexed by the codebook graph.</p>
+</dd>
+<dt>int</dt><dd><p>The number of samples prior to terminating</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mlcomm.algorithms.MotionTS.update_node">
+<span class="sig-name descname"><span class="pre">update_node</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">current_midxs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.algorithms.MotionTS.update_node" title="Link to this definition">¶</a></dt>
+<dd><section id="id42">
+<h3>Description<a class="headerlink" href="#id42" title="Link to this heading">¶</a></h3>
+<p>Updates the node’s sample history, and deletes “old” samples as specified by the sampling window length “W”</p>
+<p>In the non-stationary setting, this “ages out” older samples of other nodes</p>
+</section>
+<section id="id43">
+<h3>Parameters<a class="headerlink" href="#id43" title="Link to this heading">¶</a></h3>
+<dl class="simple">
+<dt>node<span class="classifier">object</span></dt><dd><p>The node to be updated.</p>
+</dd>
+<dt>r<span class="classifier">float</span></dt><dd><p>The new sample reward.</p>
+</dd>
+</dl>
+</section>
+<section id="id44">
+<h3>Returns<a class="headerlink" href="#id44" title="Link to this heading">¶</a></h3>
+<p>None</p>
+</section>
+</dd></dl>
+
+</section>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="mlcomm.algorithms.NPHTS">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mlcomm.algorithms.</span></span><span class="sig-name descname"><span class="pre">NPHTS</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.algorithms.NPHTS" title="Link to this definition">¶</a></dt>
+<dd><section id="id45">
+<h2>Description<a class="headerlink" href="#id45" title="Link to this heading">¶</a></h2>
+<p>Phased Track and Stop Beamforming approach from  [1]. This class implements the NPHTS algorithm, an extension of the TASD class, where TASD is run for each level
+specified by attribute p (‘levels_to_play’) in the hierarchical beamforming codebook.</p>
+<p>[1] Wei, Yi, Zixin Zhong, and Vincent YF Tan. “Fast beam alignment via pure exploration in multi-armed bandits.” IEEE Transactions on Wireless Communications (2022).</p>
+<p>Original code at:
+<a class="reference external" href="https://github.com/YiWei0129/Fast-beam-alignment">https://github.com/YiWei0129/Fast-beam-alignment</a></p>
+</section>
+<section id="id46">
+<h2>Parameters<a class="headerlink" href="#id46" title="Link to this heading">¶</a></h2>
+<dl class="simple">
+<dt>params<span class="classifier">dict</span></dt><dd><p>A dictionary of parameters for initializing the NPHTS algorithm. 
+Must include ‘levels_to_play’, ‘delta’, and ‘epsilon’.</p>
+<ul class="simple">
+<li><dl class="simple">
+<dt>levels_to_play: List[int]</dt><dd><p>A list indicating the levels to be played in the algorithm.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>delta: List[float]</dt><dd><p>A list of delta values for each level.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>epsilon: float</dt><dd><p>The epsilon value for the algorithm.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+</section>
+<section id="id47">
+<h2>Raises<a class="headerlink" href="#id47" title="Link to this heading">¶</a></h2>
+<dl class="simple">
+<dt>AssertionError</dt><dd><p>If the length of ‘levels_to_play’ does not match the length of ‘delta’.
+If the last element of ‘levels_to_play’ is not 1.</p>
+</dd>
+</dl>
+</section>
+<section id="id48">
+<h2>Methods<a class="headerlink" href="#id48" title="Link to this heading">¶</a></h2>
+<dl class="simple">
+<dt>__init__(self, params):</dt><dd><p>Initializes the NPHTS algorithm with the provided parameters.</p>
+</dd>
+<dt>run_alg(self):</dt><dd><p>Runs the NPHTS algorithm to find the best beamforming vector.</p>
+</dd>
+</dl>
+</section>
+<section id="id49">
+<h2>Notes<a class="headerlink" href="#id49" title="Link to this heading">¶</a></h2>
+<p>Relies on the TASD class for the update_node method.</p>
+<p>Slightly modified from the implementation in [3] which has a fixed two-phase approach, whereas here we
+allow the user to select which levels to play by the key in params ‘levels_to_play’.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="mlcomm.algorithms.NPHTS.run_alg">
+<span class="sig-name descname"><span class="pre">run_alg</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.algorithms.NPHTS.run_alg" title="Link to this definition">¶</a></dt>
+<dd><section id="id50">
+<h3>Description<a class="headerlink" href="#id50" title="Link to this heading">¶</a></h3>
+<p>Runs the NPHTS algorithm to find the best beamforming vector.</p>
+<p>This method implements the core logic of the NPHTS algorithm, leveraging 
+the parameters initialized in the __init__ method.</p>
+</section>
+<section id="id51">
+<h3>Returns<a class="headerlink" href="#id51" title="Link to this heading">¶</a></h3>
+<dl class="simple">
+<dt>int</dt><dd><p>The midx corresponding to the estimated best beamforming vector as indexed by the codebook graph.</p>
+</dd>
+<dt>int</dt><dd><p>The number of samples prior to terminating</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+</section>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="mlcomm.algorithms.TASD">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mlcomm.algorithms.</span></span><span class="sig-name descname"><span class="pre">TASD</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.algorithms.TASD" title="Link to this definition">¶</a></dt>
+<dd><section id="id52">
+<h2>Description<a class="headerlink" href="#id52" title="Link to this heading">¶</a></h2>
+<p>Track and Stop D (TASD) [1] algorithm performed on midxs specified from the cb_graph object passed on initialization (see documentaiton for AlgorithmTemplate)</p>
+<p>[1] Garivier, Aurélien, and Emilie Kaufmann. “Nonasymptotic sequential tests for overlapping hypotheses applied to near-optimal arm identification in bandit models.” Sequential Analysis 40.1 (2021): 61-96.</p>
+<p>Original Julia code at
+<a class="reference external" href="https://github.com/EmilieKaufmann/BAI_epsBAI_code/blob/master/EpsilonBAIalgos.jl">https://github.com/EmilieKaufmann/BAI_epsBAI_code/blob/master/EpsilonBAIalgos.jl</a></p>
+</section>
+<section id="id53">
+<h2>Attributes<a class="headerlink" href="#id53" title="Link to this heading">¶</a></h2>
+<dl class="simple">
+<dt>delta<span class="classifier">float</span></dt><dd><p>Confidence parameter for upper confidence bound calculations.</p>
+</dd>
+<dt>epsilon<span class="classifier">float</span></dt><dd><p>Tolerance paramter in which rewards are epsilon-optimal if mu + epsilon&gt;= mu_max</p>
+</dd>
+</dl>
+</section>
+<section id="id54">
+<h2>Methods<a class="headerlink" href="#id54" title="Link to this heading">¶</a></h2>
+<dl class="simple">
+<dt>__init__(self, params):</dt><dd><p>Initializes the HOSUB algorithm with the provided parameters.</p>
+</dd>
+<dt>run_base_alg(self):</dt><dd><p>Runs the TASD algorithm to find the best beamforming vector.</p>
+</dd>
+<dt>update_node(self, node, r):</dt><dd><p>Updates the node’s empirical mean reward and upper confidence bound.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="mlcomm.algorithms.TASD.run_base_alg">
+<span class="sig-name descname"><span class="pre">run_base_alg</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">current_midxs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.algorithms.TASD.run_base_alg" title="Link to this definition">¶</a></dt>
+<dd><section id="id55">
+<h3>Description<a class="headerlink" href="#id55" title="Link to this heading">¶</a></h3>
+<p>Runs the Track and Stop algorithm from [1] with Chernoff stopping + D-Tracking</p>
+</section>
+<section id="id56">
+<h3>Parameters<a class="headerlink" href="#id56" title="Link to this heading">¶</a></h3>
+<dl class="simple">
+<dt>current_midxs<span class="classifier">array or list of ints</span></dt><dd><p>master indices from codebook object corresponding to nodes which are played in 
+contention in a MAB game.  If left unspecified, then by default all of the master indices belonging to nodes
+with the narrowest beams are used.</p>
+</dd>
+</dl>
+</section>
+<section id="subordinate-functions">
+<h3>Subordinate Functions<a class="headerlink" href="#subordinate-functions" title="Link to this heading">¶</a></h3>
+<dl class="simple">
+<dt>rate(t, delta):</dt><dd><p>Computes the rate function.</p>
+</dd>
+<dt>d(mu1, mu2):</dt><dd><p>Computes the divergence between two empirical values.</p>
+</dd>
+<dt>lambdaX(x, mua, mub, epsilon, pre=1e-12):</dt><dd><p>Computes the minimizer for lambda in (mu^- ; mu^+ - epsilon).</p>
+</dd>
+<dt>gb(x, mua, mub, epsilon, pre=1e-12):</dt><dd><p>Computes the minimum value of d(mua, lambda) + d(mub, lambda + epsilon).</p>
+</dd>
+<dt>AdmissibleAux(mu, a, epsilon):</dt><dd><p>Computes the admissible auxiliary values for a given arm.</p>
+</dd>
+<dt>xbofy(y, mua, mub, epsilon, pre=1e-12):</dt><dd><p>Finds x such that g_b(x) = y.</p>
+</dd>
+<dt>dicoSolve(f, xMin, xMax, pre=1e-11):</dt><dd><p>Finds m such that f(m) = 0 using binary search.</p>
+</dd>
+<dt>auxEps(y, mu, a, epsilon, pre=1e-12):</dt><dd><p>Returns F_mu(y) - 1.</p>
+</dd>
+<dt>aOpt(mu, a, epsilon, pre=1e-12):</dt><dd><p>Returns the optimal weights and values for the epsilon optimal arm.</p>
+</dd>
+<dt>OptimalWeightsEpsilon(mu, epsilon, pre=1e-11):</dt><dd><p>Returns T*(mu) and a matrix containing the candidate optimal weights.</p>
+</dd>
+<dt>PGLRT(muhat, counts, epsilon, Aeps, K):</dt><dd><p>Computes the parallel GLRT stopping rule and returns the best arm.</p>
+</dd>
+</dl>
+</section>
+<section id="id57">
+<h3>Returns<a class="headerlink" href="#id57" title="Link to this heading">¶</a></h3>
+<dl class="simple">
+<dt>int</dt><dd><p>The midx corresponding to the estimated best beamforming vector as indexed by the codebook graph.</p>
+</dd>
+<dt>int</dt><dd><p>The number of samples prior to terminating</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mlcomm.algorithms.TASD.update_node">
+<span class="sig-name descname"><span class="pre">update_node</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">current_midxs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.algorithms.TASD.update_node" title="Link to this definition">¶</a></dt>
+<dd><section id="id58">
+<h3>Description<a class="headerlink" href="#id58" title="Link to this heading">¶</a></h3>
+<p>Updates the node’s empirical mean reward and upper confidence bound.</p>
+<p>This method updates the number of pulls, empirical mean reward, and upper
+confidence bound for the specified node based on the new sample reward.</p>
+</section>
+<section id="id59">
+<h3>Parameters<a class="headerlink" href="#id59" title="Link to this heading">¶</a></h3>
+<dl class="simple">
+<dt>node<span class="classifier">object</span></dt><dd><p>The node to be updated.</p>
+</dd>
+<dt>r<span class="classifier">float</span></dt><dd><p>The new sample reward.</p>
+</dd>
+</dl>
+</section>
+<section id="id60">
+<h3>Returns<a class="headerlink" href="#id60" title="Link to this heading">¶</a></h3>
+<p>None</p>
+</section>
+</dd></dl>
+
+</section>
+</dd></dl>
+
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/gtlogo.png" alt="Logo"/>
+            </a></p>
+<h1 class="logo"><a href="index.html">mlcomm</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="setup_and_installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Functional Blocks</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">mlcomm.algorithms</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#mlcomm.algorithms.ABT"><code class="docutils literal notranslate"><span class="pre">ABT</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#mlcomm.algorithms.AlgorithmTemplate"><code class="docutils literal notranslate"><span class="pre">AlgorithmTemplate</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#mlcomm.algorithms.DBZ"><code class="docutils literal notranslate"><span class="pre">DBZ</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#mlcomm.algorithms.HOSUB"><code class="docutils literal notranslate"><span class="pre">HOSUB</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#mlcomm.algorithms.HPM"><code class="docutils literal notranslate"><span class="pre">HPM</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#mlcomm.algorithms.MotionTS"><code class="docutils literal notranslate"><span class="pre">MotionTS</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#mlcomm.algorithms.NPHTS"><code class="docutils literal notranslate"><span class="pre">NPHTS</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#mlcomm.algorithms.TASD"><code class="docutils literal notranslate"><span class="pre">TASD</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="codebooks.html">mlcomm.codebooks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="channels.html">mlcomm.channels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="util.html">mlcomm.util</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Tutorials:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/simulation_quickstart.html">Simulation Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/building_codebooks.html">Codebook Construction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/algorithm_prototypes.html">Algorithm Prototypes and Templates</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="setup_and_installation.html" title="previous chapter">Installation</a></li>
+      <li>Next: <a href="codebooks.html" title="next chapter">mlcomm.codebooks</a></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2024, Georgia Institute of Technology.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.3.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+      |
+      <a href="_sources/algorithms.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

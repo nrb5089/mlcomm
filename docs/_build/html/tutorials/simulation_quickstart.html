@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Simulation Quickstart &#8212; mlcomm 0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=12dfc556" />
+    <script src="../_static/documentation_options.js?v=2709fde1"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Codebook Construction" href="building_codebooks.html" />
+    <link rel="prev" title="mlcomm.util" href="../util.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="simulation-quickstart">
+<h1>Simulation Quickstart<a class="headerlink" href="#simulation-quickstart" title="Link to this heading">¶</a></h1>
+<p>In order to run simulations with <code class="docutils literal notranslate"><span class="pre">mlcomm</span></code>, three components are required:</p>
+<ol class="arabic simple">
+<li><p>A codebook</p></li>
+<li><p>A channel</p></li>
+<li><p>An algorithm</p></li>
+</ol>
+<p>An assortment of each are stored in the respective modules <code class="docutils literal notranslate"><span class="pre">codebooks</span></code>, <code class="docutils literal notranslate"><span class="pre">channels</span></code>, <code class="docutils literal notranslate"><span class="pre">algorithms</span></code>.  First, create your codebook, this can often be a bottleneck if your rebuilding it every algorithm iteration.  We recommend saving it off.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">mlcomm</span> <span class="k">as</span> <span class="nn">mlc</span>
+<span class="kn">from</span> <span class="nn">mlcomm</span> <span class="kn">import</span> <span class="n">codebooks</span> <span class="k">as</span> <span class="n">cb</span>
+<span class="n">cb_graph</span> <span class="o">=</span> <span class="n">cb</span><span class="o">.</span><span class="n">BinaryHierarchicalCodebook</span><span class="p">({</span><span class="s1">&#39;depth&#39;</span><span class="p">:</span><span class="mi">6</span><span class="p">,</span> <span class="s1">&#39;num_elements&#39;</span> <span class="p">:</span> <span class="mi">64</span><span class="p">,</span> <span class="s1">&#39;num_rf_chains&#39;</span> <span class="p">:</span> <span class="mi">32</span><span class="p">,</span> <span class="s1">&#39;num_data_streams&#39;</span> <span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;min_max_angles_degs&#39;</span> <span class="p">:</span> <span class="p">(</span><span class="mi">30</span><span class="p">,</span><span class="mi">150</span><span class="p">)})</span>
+<span class="n">cb</span><span class="o">.</span><span class="n">save_codebook</span><span class="p">(</span><span class="n">cb_graph</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="s1">&#39;my_codebook&#39;</span><span class="p">,</span><span class="n">savepath</span> <span class="o">=</span> <span class="s1">&#39;./&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The codebook graph <code class="docutils literal notranslate"><span class="pre">cb_graph</span></code> is the key object that stores everything about your codebook, and will also help track observations and other statistics in Multi-Armed Bandit (MAB) algorithms, for example.  Next, create your channel.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">mlcomm</span> <span class="kn">import</span> <span class="n">channels</span>
+
+<span class="n">NUM_PATHS</span> <span class="o">=</span> <span class="mi">5</span>
+<span class="n">SNR</span> <span class="o">=</span> <span class="mi">20</span> <span class="c1">#in dB</span>
+
+<span class="n">aoa_aod_degs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">cb_graph</span><span class="o">.</span><span class="n">min_max_angles</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">cb_graph</span><span class="o">.</span><span class="n">min_max_angles</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">*</span> <span class="mi">180</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span>
+
+<span class="n">mychannel</span> <span class="o">=</span> <span class="n">channels</span><span class="o">.</span><span class="n">RicianAR1</span><span class="p">({</span><span class="s1">&#39;num_elements&#39;</span> <span class="p">:</span> <span class="n">cb_graph</span><span class="o">.</span><span class="n">M</span><span class="p">,</span> <span class="s1">&#39;angle_degs&#39;</span> <span class="p">:</span> <span class="n">aoa_aod_degs</span><span class="p">,</span> <span class="s1">&#39;fading_1&#39;</span> <span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;fading_2&#39;</span> <span class="p">:</span> <span class="mi">10</span><span class="p">,</span> <span class="s1">&#39;correlation&#39;</span> <span class="p">:</span> <span class="mf">0.024451</span><span class="p">,</span> <span class="s1">&#39;num_paths&#39;</span> <span class="p">:</span> <span class="n">NUM_PATHS</span><span class="p">,</span> <span class="s1">&#39;snr&#39;</span> <span class="p">:</span> <span class="n">SNR</span><span class="p">,</span> <span class="s1">&#39;seed&#39;</span> <span class="p">:</span> <span class="mi">0</span><span class="p">})</span>
+</pre></div>
+</div>
+<p>This generates one instance of the channel, in evaluating algorithms, you may want to specify several seed instances along with different angles or Signal-to-Noise Ratio (SNR).  We now instantiate an algorithm instance of <code class="docutils literal notranslate"><span class="pre">HOSUB</span></code>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">mlcomm</span> <span class="kn">import</span> <span class="n">algorithms</span>
+<span class="n">bandit</span> <span class="o">=</span> <span class="n">HOSUB</span><span class="p">({</span><span class="s1">&#39;cb_graph&#39;</span> <span class="p">:</span> <span class="n">cb_graph</span><span class="p">,</span> <span class="s1">&#39;channel&#39;</span> <span class="p">:</span> <span class="n">mychannel</span><span class="p">,</span> <span class="s1">&#39;time_horizon&#39;</span> <span class="p">:</span> <span class="mi">150</span><span class="p">,</span> <span class="s1">&#39;starting_level&#39;</span> <span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;c&#39;</span> <span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;delta&#39;</span> <span class="p">:</span> <span class="mf">.01</span><span class="p">})</span>
+</pre></div>
+</div>
+<p>To run the algorithm, call the <code class="docutils literal notranslate"><span class="pre">HOSUB</span></code> class method <code class="docutils literal notranslate"><span class="pre">bandit.run_alg()</span></code>.  All algorithms have an equivalent method to do this, and are based on the parent class <code class="docutils literal notranslate"><span class="pre">AlgorithmTemplate</span></code>.  All algorithms have a attribute dictionary <code class="docutils literal notranslate"><span class="pre">log_data</span></code> with key-values that describe the algorithm performance.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">bandit</span><span class="o">.</span><span class="n">run_alg</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>After the algorithm runs, we can report out the results with the function below that takes the algorithm instance <code class="docutils literal notranslate"><span class="pre">bandit</span></code> as an argument.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">report_bai_result</span><span class="p">(</span><span class="n">bandit</span><span class="p">):</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Description</span>
+<span class="sd">-----------</span>
+<span class="sd">Prints several outputs of the resultant simulation.</span>
+
+<span class="sd">Parameters</span>
+<span class="sd">----------</span>
+<span class="sd">bandit : object</span>
+<span class="sd">    Object corresponding to best arm identification algorithm post simulation.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">log_data</span> <span class="o">=</span> <span class="n">bandit</span><span class="o">.</span><span class="n">log_data</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Estimated Best Node midx: </span><span class="si">{</span><span class="n">log_data</span><span class="p">[</span><span class="s2">&quot;path&quot;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s1"> after </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">log_data</span><span class="p">[</span><span class="s2">&quot;samples&quot;</span><span class="p">])</span><span class="si">}</span><span class="s1"> samples&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Actual Best Node midx: </span><span class="si">{</span><span class="n">bandit</span><span class="o">.</span><span class="n">best_midx</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Resultant Relative Spectral Efficiency: </span><span class="si">{</span><span class="n">log_data</span><span class="p">[</span><span class="s2">&quot;relative_spectral_efficiency&quot;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The full code is shown below, assuming you’ve saved your codebook as recommended, this should run without issue!</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">mlcomm</span> <span class="k">as</span> <span class="nn">mlc</span>
+
+<span class="n">NUM_PATHS</span> <span class="o">=</span> <span class="mi">5</span>
+<span class="n">SNR</span> <span class="o">=</span> <span class="mi">20</span> <span class="c1">#in dB</span>
+
+<span class="k">def</span> <span class="nf">hosub_multi_run</span><span class="p">():</span>
+    <span class="k">for</span> <span class="n">seed</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">100</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">seed</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Initialized RNG in main loop. Seed = </span><span class="si">{</span><span class="n">seed</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span> <span class="o">=</span> <span class="n">seed</span><span class="p">)</span>
+        <span class="n">cb_graph</span> <span class="o">=</span> <span class="n">mlc</span><span class="o">.</span><span class="n">codebooks</span><span class="o">.</span><span class="n">load_codebook</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="s1">&#39;mycodebook&#39;</span><span class="p">,</span> <span class="n">loadpath</span><span class="o">=</span><span class="s1">&#39;./&#39;</span><span class="p">)</span>
+        <span class="n">aoa_aod_degs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">cb_graph</span><span class="o">.</span><span class="n">min_max_angles</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">cb_graph</span><span class="o">.</span><span class="n">min_max_angles</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">*</span> <span class="mi">180</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span>
+
+        <span class="c1">#Channel Option</span>
+        <span class="n">mychannel</span> <span class="o">=</span> <span class="n">mlc</span><span class="o">.</span><span class="n">channels</span><span class="o">.</span><span class="n">RicianAR1</span><span class="p">({</span><span class="s1">&#39;num_elements&#39;</span> <span class="p">:</span> <span class="n">cb_graph</span><span class="o">.</span><span class="n">M</span><span class="p">,</span> <span class="s1">&#39;angle_degs&#39;</span> <span class="p">:</span> <span class="n">aoa_aod_degs</span><span class="p">,</span> <span class="s1">&#39;fading_1&#39;</span> <span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;fading_2&#39;</span> <span class="p">:</span> <span class="mi">10</span><span class="p">,</span> <span class="s1">&#39;correlation&#39;</span> <span class="p">:</span> <span class="mf">0.024451</span><span class="p">,</span> <span class="s1">&#39;num_paths&#39;</span> <span class="p">:</span> <span class="n">NUM_PATHS</span><span class="p">,</span> <span class="s1">&#39;snr&#39;</span> <span class="p">:</span> <span class="n">SNR</span><span class="p">,</span> <span class="s1">&#39;seed&#39;</span> <span class="p">:</span> <span class="n">seed</span><span class="p">})</span>
+
+        <span class="n">bandit</span> <span class="o">=</span> <span class="n">mlc</span><span class="o">.</span><span class="n">algorithms</span><span class="o">.</span><span class="n">HOSUB</span><span class="p">({</span><span class="s1">&#39;cb_graph&#39;</span> <span class="p">:</span> <span class="n">cb_graph</span><span class="p">,</span> <span class="s1">&#39;channel&#39;</span> <span class="p">:</span> <span class="n">mychannel</span><span class="p">,</span> <span class="s1">&#39;time_horizon&#39;</span> <span class="p">:</span> <span class="mi">150</span><span class="p">,</span> <span class="s1">&#39;starting_level&#39;</span> <span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;c&#39;</span> <span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;delta&#39;</span> <span class="p">:</span> <span class="mf">.01</span><span class="p">})</span>
+        <span class="n">bandit</span><span class="o">.</span><span class="n">run_alg</span><span class="p">()</span>
+        <span class="n">report_bai_result</span><span class="p">(</span><span class="n">bandit</span><span class="p">)</span>
+
+<span class="n">hosub_multi_run</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>The output should look like</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">...</span>
+
+<span class="go">Estimated Best Node midx: 71 after 150 samples</span>
+<span class="go">Actual Best Node midx: 71</span>
+<span class="go">Resultant Relative Spectral Efficiency: 1.0</span>
+
+
+<span class="go">Estimated Best Node midx: 36 after 150 samples</span>
+<span class="go">Actual Best Node midx: 36</span>
+<span class="go">Resultant Relative Spectral Efficiency: 1.0</span>
+
+
+<span class="go">Estimated Best Node midx: 118 after 150 samples</span>
+<span class="go">Actual Best Node midx: 118</span>
+<span class="go">Resultant Relative Spectral Efficiency: 1.0</span>
+
+
+<span class="go">Estimated Best Node midx: 49 after 150 samples</span>
+<span class="go">Actual Best Node midx: 49</span>
+<span class="go">Resultant Relative Spectral Efficiency: 1.0</span>
+
+
+<span class="go">Estimated Best Node midx: 25 after 150 samples</span>
+<span class="go">Actual Best Node midx: 107</span>
+<span class="go">Resultant Relative Spectral Efficiency: 0.8954281962709966</span>
+
+
+<span class="go">Estimated Best Node midx: 76 after 150 samples</span>
+<span class="go">Actual Best Node midx: 76</span>
+<span class="go">Resultant Relative Spectral Efficiency: 1.0</span>
+
+
+<span class="go">Estimated Best Node midx: 75 after 150 samples</span>
+<span class="go">Actual Best Node midx: 75</span>
+<span class="go">Resultant Relative Spectral Efficiency: 1.0</span>
+
+<span class="go">...</span>
+</pre></div>
+</div>
+<p>Additional algorithm prototypes for quickstart, including this one, are in the <code class="docutils literal notranslate"><span class="pre">mlcomm/tests/algorithms_test.py</span></code> module.</p>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/gtlogo.png" alt="Logo"/>
+            </a></p>
+<h1 class="logo"><a href="../index.html">mlcomm</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../setup_and_installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Functional Blocks</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../algorithms.html">mlcomm.algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../codebooks.html">mlcomm.codebooks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../channels.html">mlcomm.channels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../util.html">mlcomm.util</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Tutorials:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Simulation Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="building_codebooks.html">Codebook Construction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="algorithm_prototypes.html">Algorithm Prototypes and Templates</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="../util.html" title="previous chapter">mlcomm.util</a></li>
+      <li>Next: <a href="building_codebooks.html" title="next chapter">Codebook Construction</a></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2024, Georgia Institute of Technology.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.3.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+      |
+      <a href="../_sources/tutorials/simulation_quickstart.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

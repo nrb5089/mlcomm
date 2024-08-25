@@ -1,0 +1,15 @@
+.. image:: media/atl2077_gold_cell.png
+
+mlcomm.codebooks
+=================
+
+Features codebook construction for both Binary Hierarchical codebook, shown in Figure below,
+
+In addition, we feature construction of a Trinary Hierarhical codebook in which each narrow beam has a corresponding broad beam steered in the same direction.  Conversely, the broader beams split into three non-overlapping beams as well.  Example shown below.
+
+.. image:: media/beamforming_pattern_demo.png
+
+.. automodule:: mlcomm.codebooks
+    :members:
+    :undoc-members:
+    :exclude-members: __dict__, __weakref__, __module__

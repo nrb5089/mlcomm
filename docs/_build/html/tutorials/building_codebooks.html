@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Codebook Construction &#8212; mlcomm 0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=12dfc556" />
+    <script src="../_static/documentation_options.js?v=2709fde1"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Algorithm Prototypes and Templates" href="algorithm_prototypes.html" />
+    <link rel="prev" title="mlcomm.util" href="../util.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="codebook-construction">
+<h1>Codebook Construction<a class="headerlink" href="#codebook-construction" title="Link to this heading">¶</a></h1>
+<p>The codebook objects in <code class="docutils literal notranslate"><span class="pre">mlcomm</span></code> intend to make organization of the beamforming vectors each.  Each beamforming vector is also an object <code class="docutils literal notranslate"><span class="pre">Node</span></code> containing many useful attributes that relate it to it’s position in the graph.  The main user customizable parameters include:</p>
+<ul class="simple">
+<li><p>Number of antenna elements in your Uniform Linear Array (ULA)</p></li>
+<li><p>Number of RF chains for the hybrid analog-digital configuration</p></li>
+<li><p>Number of streams (currently defaults to a single stream)</p></li>
+<li><p>The extent of the angular coverage specified in the minimum and maximum angles</p></li>
+</ul>
+<p>The plots below are generated using the functions contained in <code class="docutils literal notranslate"><span class="pre">mlcomm/tests/codebook_tests.py</span></code>.</p>
+<section id="binary-codebook">
+<h2>Binary Codebook<a class="headerlink" href="#binary-codebook" title="Link to this heading">¶</a></h2>
+<p>For the <code class="docutils literal notranslate"><span class="pre">BinaryHierarchicalCodebook</span></code>, the user must specify the depth, which dictates the final number of narrow beams.  For example, a depth of 6 generates 64 narrow beams at the lowest level.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">mlcomm.codebooks</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="n">cb_graph</span> <span class="o">=</span> <span class="n">BinaryHierarchicalCodebook</span><span class="p">({</span><span class="s1">&#39;depth&#39;</span><span class="p">:</span><span class="mi">6</span><span class="p">,</span> <span class="s1">&#39;num_elements&#39;</span> <span class="p">:</span> <span class="mi">64</span><span class="p">,</span> <span class="s1">&#39;num_rf_chains&#39;</span> <span class="p">:</span> <span class="mi">32</span><span class="p">,</span> <span class="s1">&#39;num_data_streams&#39;</span> <span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;min_max_angles_degs&#39;</span> <span class="p">:</span> <span class="p">(</span><span class="mi">30</span><span class="p">,</span><span class="mi">150</span><span class="p">)})</span>
+</pre></div>
+</div>
+<p>Now we show off the construction.  Each codebook has a base set at each level</p>
+<img alt="../_images/base_set_binary_0.png" src="../_images/base_set_binary_0.png" />
+<img alt="../_images/base_set_binary_1.png" src="../_images/base_set_binary_1.png" />
+<img alt="../_images/base_set_binary_2.png" src="../_images/base_set_binary_2.png" />
+<p>We may also view the hierarchy and what a path for zooming in may look like for two narrow beamforming patterns.</p>
+<img alt="../_images/zoom_out_binary_30.png" src="../_images/zoom_out_binary_30.png" />
+<img alt="../_images/zoom_out_binary_45.png" src="../_images/zoom_out_binary_45.png" />
+</section>
+<section id="ternary-codebook">
+<h2>Ternary Codebook<a class="headerlink" href="#ternary-codebook" title="Link to this heading">¶</a></h2>
+<p>We further augment the binary codebook to construct <code class="docutils literal notranslate"><span class="pre">TernaryHierarchicalCodebook</span></code>, first specify the number of broad beamforming vectors, <code class="docutils literal notranslate"><span class="pre">num_initial_non_overlapping</span></code> and the <code class="docutils literal notranslate"><span class="pre">depth</span></code>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">mlcomm.codebooks</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="n">cb_graph</span> <span class="o">=</span> <span class="n">TernaryPointedHierarchicalCodebook</span><span class="p">({</span><span class="s1">&#39;num_initial_non_overlapping&#39;</span> <span class="p">:</span> <span class="mi">5</span><span class="p">,</span> <span class="s1">&#39;depth&#39;</span> <span class="p">:</span> <span class="mi">4</span><span class="p">,</span> <span class="s1">&#39;num_elements&#39;</span> <span class="p">:</span> <span class="mi">128</span><span class="p">,</span> <span class="s1">&#39;num_rf_chains&#39;</span> <span class="p">:</span> <span class="mi">32</span><span class="p">,</span> <span class="s1">&#39;num_data_streams&#39;</span> <span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;min_max_angles_degs&#39;</span> <span class="p">:</span> <span class="p">(</span><span class="mi">30</span><span class="p">,</span><span class="mi">150</span><span class="p">)})</span>
+</pre></div>
+</div>
+<p>The codebook first fans out from the broad beamforming vectors</p>
+<img alt="../_images/base_set_ternary_0.png" src="../_images/base_set_ternary_0.png" />
+<img alt="../_images/base_set_ternary_1.png" src="../_images/base_set_ternary_1.png" />
+<img alt="../_images/base_set_ternary_2.png" src="../_images/base_set_ternary_2.png" />
+<img alt="../_images/base_set_ternary_3.png" src="../_images/base_set_ternary_3.png" />
+<p>Working backward from the narrowest beam, there is a corresponding broad beam for each narrow one.  This is difficult to see in the figures, so we show a subset of these below.  Note the overlap between the broader beams.</p>
+<img alt="../_images/overlap_ternary_1.png" src="../_images/overlap_ternary_1.png" />
+<p>We are now able to zoom out at each pointing angle with the varying beamwidth.</p>
+<img alt="../_images/zoom_out_ternary_30.png" src="../_images/zoom_out_ternary_30.png" />
+<img alt="../_images/zoom_out_ternary_45.png" src="../_images/zoom_out_ternary_45.png" />
+<img alt="../_images/zoom_out_ternary_100.png" src="../_images/zoom_out_ternary_100.png" />
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/gtlogo.png" alt="Logo"/>
+            </a></p>
+<h1 class="logo"><a href="../index.html">mlcomm</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../setup_and_installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Functional Blocks</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../algorithms.html">mlcomm.algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../codebooks.html">mlcomm.codebooks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../channels.html">mlcomm.channels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../util.html">mlcomm.util</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Tutorials:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Codebook Construction</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#binary-codebook">Binary Codebook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#ternary-codebook">Ternary Codebook</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="algorithm_prototypes.html">Algorithm Prototypes and Templates</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="../util.html" title="previous chapter">mlcomm.util</a></li>
+      <li>Next: <a href="algorithm_prototypes.html" title="next chapter">Algorithm Prototypes and Templates</a></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2024, Georgia Institute of Technology.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.3.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+      |
+      <a href="../_sources/tutorials/building_codebooks.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
