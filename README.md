@@ -26,6 +26,8 @@ The package offers the following submodules targetted at Uniform Linear Array (U
 
 ## Documentation
 
+Full documentation available at readthedocs [here](https://mlcomm.readthedocs.io/en/latest/)
+
 To view full documentation locally for installation, module description, and usage.  
 
 ```
