@@ -29,13 +29,13 @@ sys.path.insert(0,'../mlcomm')
 import numpy as np
 import matplotlib.pyplot as plt
 from mlcomm.channels import *
-from mlcomm.util import *
+from mlcomm.util import * 
 
 def main():
     
     #Example Designs for Various channels
-    #mychannel = RicianAR1({'num_elements' : 64, 'angle_degs' : 90, 'fading_1' : 1, 'fading_2' : 10, 'correlation' : 0.024451, 'num_paths' : 5, 'snr' : 0, 'seed' : 0})
-    #mychannel = NYU1({'num_elements' : 64, 'angle_degs' : 90, 'environment' : 'LOS', 'scenario' : 'Rural', 'center_frequency_ghz' : 28, 'propagation_distance' : 50, 'noise_variance' : 1e-10, 'seed' : 0})
+    mychannel = RicianAR1({'num_elements' : 64, 'angle_degs' : 90, 'fading_1' : 1, 'fading_2' : 10, 'correlation' : 0.024451, 'num_paths' : 5, 'snr' : 0, 'seed' : 0})
+    mychannel = NYU1({'num_elements' : 64, 'angle_degs' : 90, 'environment' : 'LOS', 'scenario' : 'Rural', 'center_frequency_ghz' : 28, 'propagation_distance' : 50, 'noise_variance' : 1e-10, 'seed' : 0})
     #mychannel = NYU2({'num_elements' : 64, 'angle_degs' : 90, 'environment' : 'LOS', 'scenario' : 'RMa', 'center_frequency_ghz' : 28, 'propagation_distance' : 50, 'correlation_distance' : 20, 'initial_me_position' : (50,30,2),'noise_variance' : 1e-10, 'spatial_coherence_on' : False,'seed' : 0})
     mychannel = NYU_preset({'num_elements' : 64, 'set_number' : 1, 'scenario' : 'RMa', 'profile' : 'Hexagon', 'noise_variance' : 1e-10, 'seed' : 0})
     dynamic_motion_demo()
@@ -48,7 +48,7 @@ def dynamic_motion_demo():
     angles = []
     for nn in np.arange(2000):
         angles.append(mychannel.angles[0] * 180/np.pi)
-        mychannel.fluctuation()
+        mychannel.fluctuation(nn,(np.pi/6,5*np.pi/6))
     fig,ax = plt.subplots()
     ax.plot(angles)
     ax.set_xlabel('n')

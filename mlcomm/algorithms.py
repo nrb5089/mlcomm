@@ -32,9 +32,9 @@ import pickle
 import matplotlib.pyplot as plt
 from scipy.stats import truncnorm
 from scipy.special import erf
-from .codebooks import *
-from .channels import *
-from .util import *
+from mlcomm.codebooks import *
+from mlcomm.channels import *
+from mlcomm.util import *
 
 class AlgorithmTemplate:
     """

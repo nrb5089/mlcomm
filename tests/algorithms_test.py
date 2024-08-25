@@ -35,18 +35,19 @@ from mlcomm.codebooks import *
 from mlcomm.channels import *
 from mlcomm.util import *
 
+
 NUM_PATHS = 5
-SNR = 20 #in dB
+SNR = 10 #in dB
 
 def main():
-    hosub_multi_run()
+    #hosub_multi_run()
     #hpm_multi_run()
     #abt_run()
     #nphts_multi_run()
     #dbz_calculate_sample_windows_demo()
-    #dbz_run_stationary()
+    #dbz_multi_run_stationary()
     #dbz_run()
-    #tasd_beam_subset_demo()
+    tasd_beam_subset_demo()
     #nphts_multi_run()
     return 0
 
@@ -215,8 +216,10 @@ def calculate_dbz_sample_window_lengths(cb_graph, snr_dbs = np.arange(0,50), sig
         return data_dict
     
 def dbz_multi_run_stationary():
-    for seed in np.arange(100):
-        if seed == 0: print(f'Initialized RNG in main loop. Seed = {seed}')
+   for seed in np.arange(100):
+    #for seed in [15]:
+        
+        if seed >= 0: print(f'Initialized RNG in main loop. Seed = {seed}')
         np.random.seed(seed = seed)
         cb_graph = load_codebook(filename='demo_binary_codebook', loadpath='./')
         aoa_aod_degs = np.random.uniform(cb_graph.min_max_angles[0],cb_graph.min_max_angles[1]) * 180/np.pi
@@ -226,7 +229,7 @@ def dbz_multi_run_stationary():
         channel = RicianAR1({'num_elements' : cb_graph.M, 'angle_degs' : aoa_aod_degs, 'fading_1' : 1, 'fading_2' : 10, 'correlation' : 0.024451, 'num_paths' : NUM_PATHS, 'snr' : SNR, 'seed' : seed})
         #channel = AWGN({'num_elements' : cb_graph.M, 'angle_degs' : aoa_aod_degs, 'snr' : 20, 'seed' : seed})
         
-        bandit = DBZ({'cb_graph' : cb_graph, 'channel' : channel, 'delta' : .1, 'epsilon' : .05, 'sample_window_lengths' : [0 for hh in range(cb_graph.H)], 'mode' : 'stationary', 'levels_to_play' : [0,0,0,1,0,1], 'a' : 1, 'b' : .01, 'c' : .001})
+        bandit = DBZ({'cb_graph' : cb_graph, 'channel' : channel, 'delta' : .1, 'epsilon' : .01, 'sample_window_lengths' : [0 for hh in range(cb_graph.H)], 'mode' : 'stationary', 'levels_to_play' : [0,0,0,1,0,1], 'a' : 1, 'b' : .01, 'c' : .001})
         bandit.run_alg(0)
         report_bai_result(bandit)
     
@@ -242,7 +245,7 @@ def dbz_run():
     print(f'Sample window lengths: {sample_window_lengths}')
     cb_graph = load_codebook(filename='demo_ternary_codebook', loadpath='./')
     channel = DynamicMotion({'num_elements' : cb_graph.M, 'sigma_u_degs' : .001, 'initial_angle_degs' : 90,  'fading' : .995, 'time_step': 1, 'num_paths' : NUM_PATHS, 'snr' : snr_db, 'mode' : 'WGNA', 'seed' : 0})
-    bandit = DBZ({'cb_graph' : cb_graph, 'channel' : channel, 'delta' : .1, 'epsilon' : .01, 'sample_window_lengths' : sample_window_lengths, 'mode' : 'non-stationary', 'levels_to_play' : [1,1,1,1], 'a' : 1, 'b' : .005, 'c' : .0001})
+    bandit = DBZ({'cb_graph' : cb_graph, 'channel' : channel, 'delta' : .1, 'epsilon' : .01, 'sample_window_lengths' : sample_window_lengths, 'mode' : 'non-stationary', 'levels_to_play' : [1,1,1,1], 'a' : 1, 'b' : .01, 'c' : .0001})
     
     bandit.run_alg(2000)
     fig,ax = plt.subplots()

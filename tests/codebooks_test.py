@@ -29,7 +29,7 @@ sys.path.insert(0,'../mlcomm')
 import numpy as np
 import matplotlib.pyplot as plt
 from mlcomm.codebooks import *
-from mlcomm.util import *
+from mlcomm.util import * 
 
 def main():
     plt.close('all')

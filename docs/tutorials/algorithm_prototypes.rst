@@ -161,7 +161,7 @@ Your custom algorithms can more quickly integrate into the ``mlcomm`` framework 
             #Rest of __init__ function
             #...
         
-        def run_alg(self,args*,kwargs**):
+        def run_alg(self,*args,**kwargs):
             nodes = cb_graph.nodes
             
             #...
@@ -171,6 +171,7 @@ Your custom algorithms can more quickly integrate into the ``mlcomm`` framework 
             node2sample = self.pick_node_to_sample()
             r = self.sample(node2sample)
             self.update_node(r,node2sample)
+            self.channel.fluctuation(nn,self.cb_graph.min_max_angles)
             
         def update_node(self,reward_observed,node):
             node.num_pulls += 1.0
