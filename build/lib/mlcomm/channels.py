@@ -31,7 +31,7 @@ import matplotlib.pyplot as plt
 from scipy.signal import convolve2d
 from scipy.special import erf
 import scipy.io
-from util import * 
+from .util import * 
 
 class BasicChannel:
     """

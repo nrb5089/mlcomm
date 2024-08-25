@@ -30,11 +30,10 @@ import numpy as np
 from copy import deepcopy as dcp
 from scipy.special import lambertw as W
 from scipy.special import erf
-from algorithms import *
-from codebooks import *
-from channels import *
-from util import *
-
+from mlcomm.algorithms import *
+from mlcomm.codebooks import *
+from mlcomm.channels import *
+from mlcomm.util import *
 
 NUM_PATHS = 5
 SNR = 20 #in dB

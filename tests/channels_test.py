@@ -28,8 +28,8 @@ import sys
 sys.path.insert(0,'../mlcomm')
 import numpy as np
 import matplotlib.pyplot as plt
-from channels import *
-from util import * 
+from mlcomm.channels import *
+from mlcomm.util import *
 
 def main():
     
