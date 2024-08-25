@@ -1097,7 +1097,7 @@ class DynamicMotion(BasicChannel):
         #Observation Covariance
         self.Qv = self.sigma_v**2/2 * np.eye(2)
     
-    def fluctuation(self, angle_limits = (np.pi/6,5*np.pi/6)):
+    def fluctuation(self, angle_limits = (np.pi/6.0,5.0*np.pi/6.0)):
         """
         Description
         -----------
