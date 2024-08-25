@@ -292,7 +292,7 @@ class HOSUB(AlgorithmTemplate):
               
             #Sample node and update statistics
             self.update_node(node_to_sample,self.sample(node_to_sample))
-            
+            self.channel.fluctuation(nn)
             
             nn += 1
             
@@ -446,7 +446,7 @@ class DBZ(AlgorithmTemplate):
             if not Zmax: G = nodes[u_midx].ucb(nn-1) - nodes[gamma_midx].lcb(nn-1)
             else: G = np.inf
             epsh = self.epsilon * self.cb_graph.g**(-(H-nodes[current_midxs[0]].h-1))
-            # print(f'G: {G}, epsh : {epsh}')
+            #print(f'{nn} - G: {G}, epsh : {epsh}')
             
             #Case for Zooming In
             if G < epsh and not Zmax:
@@ -476,7 +476,10 @@ class DBZ(AlgorithmTemplate):
                     self.comm_node = nodes[self.comm_node.zoom_out_midx]
                     current_midxs = self.comm_node.zoom_in_midxs
                 gamma_midx,u_midx = self.get_gamma_u(nn,current_midxs)
-                
+            
+            #Otherwise
+            else:
+                if not Zmax: gamma_midx,u_midx = self.get_gamma_u(nn,current_midxs)
             
             #print(gamma_midx)
             self.sampling_iteration(nn,gamma_midx,u_midx)
@@ -513,7 +516,7 @@ class DBZ(AlgorithmTemplate):
                 node_to_sample = nodes[u_midx]
             else:
                 node_to_sample = nodes[np.random.choice([gamma_midx,u_midx])]
-        self.perform_sample_update_channel(node_to_sample)
+        self.perform_sample_update_channel(nn,node_to_sample)
         
     def initialize(self,nn,current_midxs):
         """
@@ -537,7 +540,7 @@ class DBZ(AlgorithmTemplate):
         for _ in [0,1]:
             for midx in current_midxs:
                 node_to_sample = nodes[midx]
-                self.perform_sample_update_channel(node_to_sample)
+                self.perform_sample_update_channel(nn,node_to_sample)
                 nn += 1
                 
         gamma_midx, u_midx = self.get_gamma_u(nn,current_midxs)
@@ -603,14 +606,14 @@ class DBZ(AlgorithmTemplate):
                         other_node.sample_history.pop(0)
                         
 
-    def perform_sample_update_channel(self,node_to_sample):
+    def perform_sample_update_channel(self,nn,node_to_sample):
         """
         Description
         -----------
         Wrapper function to perform operations necessary during sampling.
         """
         self.update_node(node_to_sample,self.sample(node_to_sample))
-        self.channel.fluctuation()
+        self.channel.fluctuation(nn,(self.cb_graph.min_max_angles[0],self.cb_graph.min_max_angles[1]))
         if self.comm_node == None:
             self.log_data['relative_spectral_efficiency'].append(0.0)
             self.log_data['path'].append(np.nan)
@@ -797,7 +800,8 @@ class HPM(AlgorithmTemplate):
             
             athetai = np.array([avec(angle,self.cb_graph.M) @ np.conj(current_node.f) for angle in np.array([self.cb_graph.nodes[midx].steered_angle for midx in self.cb_graph.level_midxs[-1]])])
             mus = np.sum([alpha_hats[ll] *  athetai for ll in np.arange(self.channel.L)],axis = 0)
-            pdfs =  1/(np.pi * self.channel.sigma_v**2) * np.exp(-np.abs(z-mus)**2/(self.channel.sigma_v**2))
+            if self.channel.sigma_v <= .1: sigma_v_temp = .1
+            pdfs =  1/(np.pi * sigma_v_temp**2) * np.exp(-np.abs(z-mus)**2/(sigma_v_temp**2))
             
             nn_flops += 2 * self.cb_graph.M * N
 
@@ -815,7 +819,9 @@ class HPM(AlgorithmTemplate):
             self.log_data['flops'].append(nn_flops)
             self.log_data['relative_spectral_efficiency'].append(self.calculate_relative_spectral_efficiency(nodes[est_best_midx]))
             self.log_data['samples'] = [nn]
+            
             nn +=1
+            self.channel.fluctuation(nn)
             
             if (self.mode == 'VL' and np.max(posteriors) > 1- self.delta):  break
             elif (self.mode == 'FL' and nn == self.time_horizon): break
@@ -981,7 +987,8 @@ class ABT(AlgorithmTemplate):
             
             athetai = np.array([avec(angle,self.cb_graph.M) @ np.conj(current_node.f) for angle in np.array([self.cb_graph.nodes[midx].steered_angle for midx in self.cb_graph.level_midxs[-1]])])
             mus = np.sum([alpha_hats[ll] *  athetai for ll in np.arange(self.channel.L)],axis = 0)
-            pdfs =  1/(np.pi * self.channel.sigma_v**2) * np.exp(-np.abs(z-mus)**2/(self.channel.sigma_v**2))
+            if self.channel.sigma_v <= .1: sigma_v_temp = .1
+            pdfs =  1/(np.pi * sigma_v_temp**2) * np.exp(-np.abs(z-mus)**2/(sigma_v_temp**2))
             
             nn_flops += 2 * self.cb_graph.M * N
 
@@ -1036,7 +1043,7 @@ class ABT(AlgorithmTemplate):
             self.log_data['flops'].append(nn_flops)
             self.log_data['relative_spectral_efficiency'].append(self.calculate_relative_spectral_efficiency(nodes[est_best_midx]))
             
-            self.channel.fluctuation(self.cb_graph.min_max_angles)
+            self.channel.fluctuation(nn,self.cb_graph.min_max_angles)
             self.set_best()
             
         return log_data
@@ -1352,6 +1359,7 @@ class TASD(AlgorithmTemplate):
             empirical_mean_rewards = [nodes[midx].empirical_mean_reward for midx in current_midxs]
             num_pulls = [nodes[midx].num_pulls for midx in current_midxs]
             nn+=1
+            self.channel.fluctuation(nn,self.cb_graph.min_max_angles)
             
         est_best_midx = current_midxs[np.argmax(empirical_mean_rewards)]
         self.log_data['samples'].append(nn)
@@ -1505,227 +1513,3 @@ class NPHTS(TASD):
                         
                 current_midxs = np.hstack([nodes[midx].zoom_in_midxs for midx in recommendation_midxs])
                 nn += num_samples
-
-                
-# class MotionTS(TASD):
-    # """
-    # Description
-    # -----------
-    # Phased Track and Stop Beamforming approach from where only recent samples are considered.  In the case that an empirical mean chosen is less than any previous
-    # level's, zoom out.
-
-    # Parameters
-    # ----------
-    # params : dict
-        # A dictionary of parameters for initializing the NPHTS algorithm. 
-        # Must include 'levels_to_play', 'delta', and 'epsilon'.
-
-        # - levels_to_play: List[int]
-            # A list indicating the levels to be played in the algorithm.
-        # - delta: List[float]
-            # A list of delta values for each level.
-        # - epsilon: float
-            # The epsilon value for the algorithm.
-
-    # Raises
-    # ------
-    # AssertionError
-        # If the length of 'levels_to_play' does not match the length of 'delta'.
-        # If the last element of 'levels_to_play' is not 1.
-        
-    # Methods
-    # -------
-    # __init__(self, params):
-        # Initializes the NPHTS algorithm with the provided parameters.
-
-    # run_alg(self):
-        # Runs the NPHTS algorithm to find the best beamforming vector.
-
-    # Notes
-    # -----
-    # Relies on the TASD class for the update_node method.
-    
-    # Slightly modified from the implementation in [3] which has a fixed two-phase approach, whereas here we
-    # allow the user to select which levels to play by the key in params 'levels_to_play'.
-
-    # """
-    # def __init__(self,params):
-        # """
-        # Description
-        # -----------
-        # Initializes the algorithm with the provided parameters.
-
-        # Parameters
-        # ----------
-        # params : dict
-            # A dictionary of parameters for initializing the NPHTS algorithm. 
-            # Must include 'levels_to_play', 'delta', and 'epsilon'.
-
-            # - levels_to_play: List[int]
-                # A list indicating the levels to be played in the algorithm.
-            # - delta: List[float]
-                # A list of delta values for each level.
-            # - sample_window_lengths : list[int]
-                # length of each sample window at level h
-            # - epsilon: float
-                # The epsilon value for the algorithm.
-
-        # Raises
-        # ------
-        # AssertionError
-            # If the length of 'levels_to_play' does not match the length of 'delta'.
-            # If the last element of 'levels_to_play' is not 1.
-        # """
-        # super().__init__(params)
-        # #self.p = params['levels_to_play']
-        # self.deltas = params['delta']
-        # self.W = params['sample_window_lengths']
-        # self.epsilon = params['epsilon']
-        # self.mode = params['mode']
-        
-        # #assert len(self.p) == len(self.delta), "Error: The number of deltas provided must match the number of levels played, the number of 1s in 'levels_to_play'."
-        # #assert self.p[-1] == 1, "Last element of 'levels_to_play' must be 1."
-        
-        # #Initialize node attributes and method for bandit algorithm
-        # for node in self.cb_graph.nodes.values():
-            # node.sample_history = []
-            # node.W = self.W[node.h]
-            
-    # def run_alg(self,time_horizon):
-        # """
-        # Description
-        # -----------
-        # Runs the algorithm to find the best beamforming vector.
-        
-        # This method implements the core logic of the NPHTS algorithm, leveraging 
-        # the parameters initialized in the __init__ method.
-        
-        # Returns
-        # -------
-        # int
-            # The midx corresponding to the estimated best beamforming vector as indexed by the codebook graph.
-        # int
-            # The number of samples prior to terminating
-        # """
-        # nn = 0
-        # nodes = self.cb_graph.nodes
-        # self.comm_node = None
-        # current_midxs = self.cb_graph.base_midxs[0]
-        # for midx in current_midxs:
-            # self.update_node(nodes[midx],self.sample(nodes[midx]),current_midxs)
-            # nn += 1
-        # previous_empirical_mean_rewards = [-np.inf] #impossible to zoom out at level h = 0
-        # while nn < time_horizon:
-        # # for hh in np.arange(self.cb_graph.H):  #Breaks when there is only a singles node from the zoom in midxs
-            # self.delta = self.deltas[nodes[current_midxs[0]].h]
-            # # if self.p[hh] == 0:
-            # #     current_midxs = np.hstack([nodes[midx].zoom_in_midxs for midx in current_midxs])
-            # # else:
-            # #tas_instance_h = TASD({'cb_graph' : self.cb_graph, 'channel' : self.channel, 'delta' : self.deltas[hh], 'epsilon' : self.epsilon})
-            
-            # if len(current_midxs) > 1:
-                # print(nn)
-                # recommendation_midx,num_samples = self.run_base_alg(current_midxs)
-                
-                # if np.any(nodes[recommendation_midx].empirical_mean_reward < np.array(previous_empirical_mean_rewards)):
-                    
-                    # #Need to pick from one of these processes: 
-                        
-                    # # 1. This just resets the MAB game.  comm_node unchanged
-                    # # current_midxs = nodes[nodes[recommendation_midx].zoom_out_midx].zoom_in_midxs
-                    
-                    # # 2. This zooms out to the level prior to the comm_node, which is now in contention with it's neighbors.
-                    # self.comm_node = nodes[self.comm_node.zoom_out_midx]
-                    # current_midxs = dcp(self.comm_node.zoom_in_midxs)
-                    
-                    # previous_empirical_mean_rewards.pop(-1)
-                # else:
-                    # self.comm_node = nodes[recommendation_midx]
-                    # current_midxs = dcp(self.comm_node.zoom_in_midxs)
-                    # previous_empirical_mean_rewards.append(self.comm_node.empirical_mean_reward)
-                    
-                # for midx in current_midxs:
-                    # self.update_node(nodes[midx],self.sample(nodes[midx]),current_midxs)
-                    # nn += 1
-                # #Include the best sibling of recommended beam
-                # # if recommendation_midx == nodes[recommendation_midx].post_sibling:
-                # #     recommendation_midxs = [nodes[recommendation_midx].prior_sibling, recommendation_midx]
-                # # elif recommendation_midx == nodes[recommendation_midx].prior_sibling:
-                # #     recommendation_midxs = [nodes[recommendation_midx].post_sibling, recommendation_midx]
-                # # else:
-                # #     if nodes[nodes[recommendation_midx].prior_sibling].empirical_mean_reward > nodes[nodes[recommendation_midx].post_sibling].empirical_mean_reward:
-                # #         recommendation_midxs = [nodes[recommendation_midx].prior_sibling, recommendation_midx]
-                # #     elif nodes[nodes[recommendation_midx].prior_sibling].empirical_mean_reward < nodes[nodes[recommendation_midx].post_sibling].empirical_mean_reward:
-                # #         recommendation_midxs = [nodes[recommendation_midx].post_sibling, recommendation_midx]
-                        
-                # # current_midxs = np.hstack([nodes[midx].zoom_in_midxs for midx in recommendation_midxs])
-                
-            # #Case for when you're fully zoomed in
-            # else:
-                # self.update_node(self.comm_node,self.sample(self.comm_node),current_midxs)
-                # nn += 1
-                
-                # if np.any(self.comm_node.empirical_mean_reward < np.array(previous_empirical_mean_rewards)):
-                    # # 1. This just resets the MAB game.  comm_node unchanged
-                    # # current_midxs = nodes[nodes[recommendation_midx].zoom_out_midx].zoom_in_midxs
-                    
-                    # # 2. This zooms out to the level prior to the comm_node, which is now in contention with it's neighbors.
-                    # self.comm_node = nodes[self.comm_node.zoom_out_midx]
-                    # current_midxs = dcp(self.comm_node.zoom_in_midxs)
-                    # previous_empirical_mean_rewards.pop(-1)
-            
-            
-                
-    # def update_node(self,node,r,current_midxs):
-        # """
-        # Description
-        # -----------
-        # Updates the node's sample history, and deletes "old" samples as specified by the sampling window length "W"
-        
-        # In the non-stationary setting, this "ages out" older samples of other nodes
-        
-        # Parameters
-        # ----------
-        # node : object
-            # The node to be updated.
-        # r : float
-            # The new sample reward.
-            
-        # Returns
-        # -------
-        # None
-        # """
-        
-        # nodes = self.cb_graph.nodes
-        
-        # #Update Node that was just sampled
-        # node.sample_history.append(r)
-        # if len(node.sample_history) > node.W:
-            # node.sample_history.pop(0)
-        
-        # #Age-out older samples on other nodes
-        # if self.mode == 'non-stationary':
-            # for other_node in self.cb_graph.nodes.values():
-                # if other_node.midx != node.midx:
-                    # other_node.sample_history.append(0.0)
-                    # if len(other_node.sample_history) > node.W:
-                        # other_node.sample_history.pop(0)
-        
-        # for midx in current_midxs:
-            # nodes[midx].num_pulls = len(np.where(np.array(nodes[midx].sample_history) != 0)[0])
-            # if nodes[midx].num_pulls > 0:
-                # nodes[midx].empirical_mean_reward = 1/nodes[midx].num_pulls * np.sum(nodes[midx].sample_history)
-                
-        # if self.comm_node == None: 
-            # self.log_data['relative_spectral_efficiency'].append(0.0)
-            # self.log_data['path'].append(np.nan)
-        # else: 
-            # self.log_data['relative_spectral_efficiency'].append(self.calculate_relative_spectral_efficiency(self.comm_node))
-            # self.log_data['path'].append(self.comm_node)
-        # self.log_data['samples'].append(1.0)
-        
-        # self.channel.fluctuation()
-        # self.set_best()
-        
-if __name__ == '__main__':
-    main()
