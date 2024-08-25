@@ -30,7 +30,7 @@ import matplotlib
 from copy import deepcopy as dcp
 from numpy.linalg import inv
 import pickle
-from .util import *
+from util import *
 
 
 class BinaryHierarchicalCodebook:

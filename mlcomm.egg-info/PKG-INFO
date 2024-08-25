@@ -1,0 +1,12 @@
+Metadata-Version: 2.1
+Name: mlcomm
+Version: 0.3
+Summary: Package of ML algorithms for communication
+Home-page: https://github.gatech.edu/mb364/mlcomm
+Author: Nathan Blinn, Matthieu Bloch, Jana Boerger
+Author-email: nblinn6@gatech.edu
+License: TBD
+Requires-Python: >=3.10
+Requires-Dist: numpy
+Requires-Dist: scipy
+Requires-Dist: matplotlib
