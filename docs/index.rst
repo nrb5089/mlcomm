@@ -38,3 +38,4 @@ how to install the project.
     tutorials/simulation_quickstart
     tutorials/building_codebooks
     tutorials/algorithm_prototypes
+    sphinx_rtd_relatively_painless
