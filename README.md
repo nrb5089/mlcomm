@@ -2,9 +2,9 @@
 
 ## Package description
 
-Package providing algorithms to test machine learnig algorithms in the context of wireless communications. Current focus is mostly on Multi-Armed Bandit type algorithms.
+Package providing algorithms to test machine learnig algorithms in the context of wireless communications. Focuses primarily on Multi-Armed Bandit type algorithms for mmWave beamforming initial alignment and tracking.  We include comparison algorithms as well.
 
-The package offers the following submodules targetted at Uniform Linear Array (ULA) beamforming channels.
+The package offers the following submodules targeted at Uniform Linear Array (ULA) beamforming channels.  
 
 - mlcomm/codebooks
     - Binary Hierarchical Beamforming Codebook
@@ -31,7 +31,7 @@ Full documentation available at readthedocs [here](https://mlcomm.readthedocs.io
 To view full documentation locally for installation, module description, and usage.  
 
 ```
-git clone https://github.gatech.edu/mb364/mlcomm.git
+git clone https://github.com/nrb5089/mlcomm.git
 cd docs
 make html
 ```
