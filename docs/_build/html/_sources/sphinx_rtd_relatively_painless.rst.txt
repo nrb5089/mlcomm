@@ -4,10 +4,6 @@ Getting a RTD Started for Git Repo
 
 The following is a minimalist guide to getting a Readthedocs page.  Most of your documentation should be in ``.rst`` documents, where this guide will show how to add figures, math, and code blocks.
 
-.. note::
-
-    I'm a rookie at RTD, and willing to learn.  Happily accepting all constructive criticisms on how to make things better!
-
 Your Code Documentation
 --------------------------
 

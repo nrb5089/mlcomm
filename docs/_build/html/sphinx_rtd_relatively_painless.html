@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Getting a RTD Started for Git Repo &#8212; mlcomm 0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=12dfc556" />
+    <script src="_static/documentation_options.js?v=2709fde1"></script>
+    <script src="_static/doctools.js?v=9a2dae69"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Algorithm Prototypes and Templates" href="tutorials/algorithm_prototypes.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="getting-a-rtd-started-for-git-repo">
+<h1>Getting a RTD Started for Git Repo<a class="headerlink" href="#getting-a-rtd-started-for-git-repo" title="Link to this heading">¶</a></h1>
+<p>The following is a minimalist guide to getting a Readthedocs page.  Most of your documentation should be in <code class="docutils literal notranslate"><span class="pre">.rst</span></code> documents, where this guide will show how to add figures, math, and code blocks.</p>
+<section id="your-code-documentation">
+<h2>Your Code Documentation<a class="headerlink" href="#your-code-documentation" title="Link to this heading">¶</a></h2>
+<p>Your documentation blocks should also follow the <code class="docutils literal notranslate"><span class="pre">.rst</span></code>, here are some examples for <code class="docutils literal notranslate"><span class="pre">Python</span></code> objects and functions.  For purposes of the tutorial, let <code class="docutils literal notranslate"><span class="pre">core.py</span></code> be the following:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">MyClass</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Description</span>
+<span class="sd">    -----------</span>
+
+<span class="sd">    Class that has attributes and methods.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    -----------</span>
+<span class="sd">        name : str</span>
+<span class="sd">            Name of the concerning party.</span>
+<span class="sd">        value : int</span>
+<span class="sd">            Value of the transaction.</span>
+
+<span class="sd">    Methods</span>
+<span class="sd">    -------</span>
+<span class="sd">    __init__(self,name,value)</span>
+<span class="sd">        Initializes the class object.</span>
+<span class="sd">    mymethod(self,x)</span>
+<span class="sd">        Multiplies the argument x by 10.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">name</span><span class="p">,</span><span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="k">def</span> <span class="nf">mymethod</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">x</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Description</span>
+<span class="sd">        -----------</span>
+<span class="sd">        Multiplies x by 10.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -----------</span>
+<span class="sd">        x : float</span>
+<span class="sd">            Quantity to multiply by 10.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            The quantity x multiplied by 10.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="mi">10</span> <span class="o">*</span> <span class="n">x</span>
+
+<span class="k">def</span> <span class="nf">myfunc</span><span class="p">(</span><span class="n">y</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Description</span>
+<span class="sd">    -----------</span>
+<span class="sd">    Adds 5 to y</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    y : float or int</span>
+<span class="sd">        Quantity to add 5.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    int or float</span>
+<span class="sd">        The quantity y plus 5.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">y</span> <span class="o">+</span> <span class="mi">5</span>
+</pre></div>
+</div>
+</section>
+<section id="the-repository-and-configuration">
+<h2>The Repository and Configuration<a class="headerlink" href="#the-repository-and-configuration" title="Link to this heading">¶</a></h2>
+<p>First, Structure your repository according to the following structure:</p>
+<ul class="simple">
+<li><dl class="simple">
+<dt>main</dt><dd><ul>
+<li><dl class="simple">
+<dt>myreponame</dt><dd><ul>
+<li><dl class="simple">
+<dt>myreponame</dt><dd><ul>
+<li><p>core.py</p></li>
+<li><p>util.py</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>docs</dt><dd><ul>
+<li><dl class="simple">
+<dt>media</dt><dd><ul>
+<li><p>landing_page_image.png</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><p>tests</p></li>
+<li><p>…</p></li>
+<li><p>README.md</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+<p>Your source code for the package your making documentation for should be in the <code class="docutils literal notranslate"><span class="pre">main/myreponame/myreponame</span></code> directory.  Go ahead and fire up a command prompt or terminal.  From your <code class="docutils literal notranslate"><span class="pre">&lt;path&gt;/myreponame</span></code> directory,</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">pip install sphinx</span>
+<span class="go">cd docs</span>
+<span class="go">sphinx-quickstart</span>
+</pre></div>
+</div>
+<p>This will create a <code class="docutils literal notranslate"><span class="pre">conf.py</span></code> file and <code class="docutils literal notranslate"><span class="pre">index.rst</span></code>.  My default configuration for the <code class="docutils literal notranslate"><span class="pre">conf.py</span></code> is shown below</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Configuration file for the Sphinx documentation builder.</span>
+<span class="c1">#</span>
+<span class="c1"># For the full list of built-in configuration values, see the documentation:</span>
+<span class="c1"># https://www.sphinx-doc.org/en/master/usage/configuration.html</span>
+
+<span class="c1"># -- Project information -----------------------------------------------------</span>
+<span class="c1"># https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="s1">&#39;../myreponame&#39;</span><span class="p">))</span>
+<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="s1">&#39;../..&#39;</span><span class="p">))</span>
+<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="s1">&#39;..&#39;</span><span class="p">))</span>
+<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">))</span>
+
+<span class="n">project</span> <span class="o">=</span> <span class="s1">&#39;myreponame&#39;</span>
+<span class="n">copyright</span> <span class="o">=</span> <span class="s1">&#39;2024, My Institution or Organization&#39;</span>
+<span class="n">author</span> <span class="o">=</span> <span class="s1">&#39;First Last, First Last, First Last&#39;</span>  <span class="c1">#If multiple Authors</span>
+<span class="n">release</span> <span class="o">=</span> <span class="s1">&#39;0.0&#39;</span>
+
+<span class="c1"># -- General configuration ---------------------------------------------------</span>
+<span class="c1"># https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration</span>
+<span class="c1"># You may add other extensions to this list as required.</span>
+
+<span class="n">extensions</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s1">&#39;sphinx.ext.duration&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;sphinx.ext.doctest&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;sphinx.ext.autodoc&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;sphinx.ext.autosummary&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;sphinx.ext.intersphinx&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;sphinx.ext.mathjax&#39;</span>
+<span class="p">]</span>
+
+<span class="n">templates_path</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;_templates&#39;</span><span class="p">]</span>
+<span class="n">exclude_patterns</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;_build&#39;</span><span class="p">,</span> <span class="s1">&#39;Thumbs.db&#39;</span><span class="p">,</span> <span class="s1">&#39;.DS_Store&#39;</span><span class="p">]</span>
+
+
+
+<span class="c1"># -- Options for HTML output -------------------------------------------------</span>
+<span class="c1"># https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output</span>
+
+<span class="n">html_theme</span> <span class="o">=</span> <span class="s1">&#39;alabaster&#39;</span>
+<span class="n">html_static_path</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;_static&#39;</span><span class="p">]</span>
+<span class="n">html_logo</span> <span class="o">=</span> <span class="s1">&#39;media/gtlogo.png&#39;</span>
+
+<span class="c1"># Common modules that used, add more as necessary.</span>
+<span class="n">autodoc_mock_imports</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;numpy&#39;</span><span class="p">,</span> <span class="s1">&#39;scipy&#39;</span><span class="p">,</span> <span class="s1">&#39;matplotlib&#39;</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>For purposes of this tutorial, I recommend replacing the content of the autogenerated <code class="docutils literal notranslate"><span class="pre">conf.py</span></code> with the above.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If you use any packages within your code modules, i.e., <code class="docutils literal notranslate"><span class="pre">core.py</span></code>, they must be added to the <code class="docutils literal notranslate"><span class="pre">autodoc_mock_imports</span></code> or the readthedocs build will fail.</p>
+</div>
+<p>Ensure you change the <code class="docutils literal notranslate"><span class="pre">myreponame</span></code> to yours.  A typical configuration for my <code class="docutils literal notranslate"><span class="pre">index.rst</span></code> is as follows:</p>
+<div class="highlight-rst notranslate"><div class="highlight"><pre><span></span><span class="gh">Welcome to the documentation for myreponame</span>
+<span class="gh">============================================</span>
+
+<span class="p">..</span> <span class="ow">image</span><span class="p">::</span> media/landing_page_image.png
+
+<span class="gs">**myreponame**</span> is a Python library intended to do stuff.
+
+Check out the <span class="na">:doc:</span><span class="nv">`setup_and_installation`</span> section for further information, including
+how to install the project.
+
+<span class="p">..</span> <span class="ow">note</span><span class="p">::</span>
+
+   This project is under active development.
+
+<span class="gh">Contents</span>
+<span class="gh">--------</span>
+
+<span class="p">..</span> <span class="ow">toctree</span><span class="p">::</span>
+    <span class="nc">:maxdepth:</span> 2
+    <span class="nc">:caption:</span> Getting Started
+
+    setup_and_installation
+
+<span class="p">..</span> <span class="ow">toctree</span><span class="p">::</span>
+    <span class="nc">:maxdepth:</span> 2
+    <span class="nc">:caption:</span> Functional Blocks
+
+    functional_blocks
+
+<span class="p">..</span> <span class="ow">toctree</span><span class="p">::</span>
+    <span class="nc">:maxdepth:</span> 2
+    <span class="nc">:caption:</span> Tutorials:
+
+    tutorials/firsttutorial
+    tutorials/secondtutorial
+</pre></div>
+</div>
+<p>The files <code class="docutils literal notranslate"><span class="pre">setup_and_installation.rst</span></code>, <code class="docutils literal notranslate"><span class="pre">functional_blocks</span></code>, and the ones within the <code class="docutils literal notranslate"><span class="pre">tutorial</span></code> directory are <em>user-created</em> and fairly standard components of the documentation.  For example <code class="docutils literal notranslate"><span class="pre">setup_and_installation.rst</span></code>,</p>
+<div class="highlight-rst notranslate"><div class="highlight"><pre><span></span><span class="gh">Installation</span>
+<span class="gh">=============</span>
+
+<span class="p">..</span> <span class="nt">_installation:</span>
+
+To use radar, first install it using pip (Same for Windows and Linux):
+
+<span class="p">..</span> <span class="ow">code-block</span><span class="p">::</span> <span class="k">console</span>
+
+    <span class="go">git clone https://github.com/username/myreponame.git</span>
+    <span class="go">cd myreponame</span>
+   (.venv) $ pip install ./
+</pre></div>
+</div>
+<p>and <code class="docutils literal notranslate"><span class="pre">functional_blocks.rst</span></code>,  I’ll use something like the following to list out all documentation for objects and functions within my code.  For example, my project might have two modules <code class="docutils literal notranslate"><span class="pre">util.py</span></code> and <code class="docutils literal notranslate"><span class="pre">core.py</span></code>, see the project structure from earlier for their location.  <code class="docutils literal notranslate"><span class="pre">core.py</span></code> was described explicitly here, do not feel compelled to create filler documentation <code class="docutils literal notranslate"><span class="pre">util.py</span></code>, just creating the file is sufficient.  The <code class="docutils literal notranslate"><span class="pre">automodule</span></code> block will parse the <code class="docutils literal notranslate"><span class="pre">&quot;&quot;&quot;</span></code> documentation blocked sections and build an html page based on that <code class="docutils literal notranslate"><span class="pre">.rst</span></code> within the documentation block.  This doesn’t always work perfectly, and may require some configuring.</p>
+<div class="highlight-rst notranslate"><div class="highlight"><pre><span></span><span class="gh">myreponame.util</span>
+<span class="gh">===========</span>
+\..\ automodule:: myreponame.util
+    :members:
+    <span class="nc">:undoc-members:</span>
+    <span class="nc">:exclude-members:</span> __dict__, __weakref__, __module__
+
+<span class="gh">myreponame.core</span>
+<span class="gh">===========</span>
+\..\ automodule:: myreponame.core
+    :members:
+    <span class="nc">:undoc-members:</span>
+    <span class="nc">:exclude-members:</span> __dict__, __weakref__, __module__
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The proper syntax is actually <code class="docutils literal notranslate"><span class="pre">..</span> <span class="pre">automodule::</span></code>, but needs to be this way to work as non-executable <code class="docutils literal notranslate"><span class="pre">.rst</span></code> here.</p>
+</div>
+</section>
+<section id="building-the-project">
+<h2>Building the Project<a class="headerlink" href="#building-the-project" title="Link to this heading">¶</a></h2>
+<p>Go ahead and create a <code class="docutils literal notranslate"><span class="pre">tutorials</span></code> directory and provide two <code class="docutils literal notranslate"><span class="pre">.rst</span></code> files within <code class="docutils literal notranslate"><span class="pre">firsttutorial</span></code> and <code class="docutils literal notranslate"><span class="pre">secondtutorial</span></code>.  You may add to these later, but just so they fit the template outline before.  At this point you can do an intial build from the <code class="docutils literal notranslate"><span class="pre">myreponame/docs</span></code> folder</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">make html</span>
+</pre></div>
+</div>
+<p>If successful, this will create a folder <code class="docutils literal notranslate"><span class="pre">_build</span></code>.  You can you the resultant documentation page <code class="docutils literal notranslate"><span class="pre">_build/html/index.html</span></code>.  Feel free to explore this a little bit to get a feel for how the <code class="docutils literal notranslate"><span class="pre">.rst</span></code> files produce the project structure.</p>
+<p>You can add more to your <code class="docutils literal notranslate"><span class="pre">tutorial</span></code> directory files to experiment with math or other markup:</p>
+<div class="highlight-rst notranslate"><div class="highlight"><pre><span></span><span class="p">..</span> <span class="ow">math</span><span class="p">::</span>
+
+    f_1(\alpha) + g_2(\beta) = 1
+</pre></div>
+</div>
+</section>
+<section id="hosting-on-readthedocs">
+<h2>Hosting on Readthedocs<a class="headerlink" href="#hosting-on-readthedocs" title="Link to this heading">¶</a></h2>
+<ol class="arabic simple">
+<li><p>Create a readthedocs account <a class="reference external" href="https://about.readthedocs.com/">https://about.readthedocs.com/</a> and link your <code class="docutils literal notranslate"><span class="pre">Git</span></code> account.  This did not work with Georgia Tech’s LDAP Git…</p></li>
+<li><p>Add a <code class="docutils literal notranslate"><span class="pre">requirements.txt</span></code> file in <code class="docutils literal notranslate"><span class="pre">main/myreponame/docs</span></code>.  It can be barebones as literally one word, but you need this nonetheless.</p></li>
+</ol>
+<p>..code-block:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sphinx</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="3">
+<li><p>Add file within the <code class="docutils literal notranslate"><span class="pre">main/myreponame</span></code> level of your project, <code class="docutils literal notranslate"><span class="pre">.readthedocs.yaml</span></code></p></li>
+</ol>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;2&quot;</span>
+
+<span class="nt">build</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">os</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;ubuntu-22.04&quot;</span>
+<span class="w">  </span><span class="nt">tools</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">python</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;3.10&quot;</span>
+
+<span class="nt">python</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">install</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">requirements</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">docs/requirements.txt</span>
+
+<span class="nt">sphinx</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">configuration</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">docs/conf.py</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="4">
+<li><p>Go to <code class="docutils literal notranslate"><span class="pre">builds</span></code> under that project and click <code class="docutils literal notranslate"><span class="pre">build</span> <span class="pre">version</span></code>.  If all goes well you should be able to <code class="docutils literal notranslate"><span class="pre">View</span> <span class="pre">Docs</span></code>.</p></li>
+</ol>
+<p>If you see something no quite right with your page but go no error, check the raw build log back on the <code class="docutils literal notranslate"><span class="pre">builds</span></code> page.</p>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/gtlogo.png" alt="Logo"/>
+            </a></p>
+<h1 class="logo"><a href="index.html">mlcomm</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="setup_and_installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Functional Blocks</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="algorithms.html">mlcomm.algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="codebooks.html">mlcomm.codebooks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="channels.html">mlcomm.channels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="util.html">mlcomm.util</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Tutorials:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="tutorials/simulation_quickstart.html">Simulation Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/building_codebooks.html">Codebook Construction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/algorithm_prototypes.html">Algorithm Prototypes and Templates</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Getting a RTD Started for Git Repo</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#your-code-documentation">Your Code Documentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#the-repository-and-configuration">The Repository and Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#building-the-project">Building the Project</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#hosting-on-readthedocs">Hosting on Readthedocs</a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="tutorials/algorithm_prototypes.html" title="previous chapter">Algorithm Prototypes and Templates</a></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2024, Georgia Institute of Technology.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.3.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+      |
+      <a href="_sources/sphinx_rtd_relatively_painless.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
