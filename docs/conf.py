@@ -42,4 +42,4 @@ html_static_path = ['_static']
 html_logo = 'media/gtlogo.png'
 
 
-autodoc_mock_imports = ['numpy', 'scipy', 'opencv-python', 'matplotlib']
+autodoc_mock_imports = ['numpy', 'scipy', 'matplotlib']
