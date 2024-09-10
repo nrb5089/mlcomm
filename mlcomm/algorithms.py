@@ -32,9 +32,9 @@ import pickle
 import matplotlib.pyplot as plt
 from scipy.stats import truncnorm
 from scipy.special import erf
-from mlcomm.codebooks import *
-from mlcomm.channels import *
-from mlcomm.util import *
+from codebooks import *
+from channels import *
+from util import *
 
 class AlgorithmTemplate:
     """
@@ -430,9 +430,8 @@ class DBZ(AlgorithmTemplate):
             node.lcb = types.MethodType(lcb,node)
     
     def run_alg(self,time_horizon):
-        if self.mode == 'stationary': time_horizon = 10000000
+        if self.mode == 'stationary': time_horizon = 10000000 #Hard stop algorithm time ceiling
         nodes = self.cb_graph.nodes
-        #TODO: change for p
         current_midxs = dcp(self.cb_graph.base_midxs[0])
         while self.p[nodes[current_midxs[0]].h] != 1:
             current_midxs = np.hstack([nodes[midx].zoom_in_midxs for midx in current_midxs])
@@ -459,7 +458,10 @@ class DBZ(AlgorithmTemplate):
                 if self.comm_node.h == H-1:
                     Zmax = True
                     gamma_midx, u_midx = dcp(self.comm_node.midx), None
-                    if self.mode == 'stationary': return gamma_midx,nn
+                    if self.mode == 'stationary': 
+                        self.log_data['path'].append(gamma_midx)
+                        self.log_data['samples'] = [nn]
+                        return gamma_midx,nn
                 else:
                     gamma_midx,u_midx = self.get_gamma_u(nn, current_midxs)
                     # gamma_midx,u_midx,nn = self.initialize(nn,current_midxs)
@@ -480,12 +482,12 @@ class DBZ(AlgorithmTemplate):
             #Otherwise
             else:
                 if not Zmax: gamma_midx,u_midx = self.get_gamma_u(nn,current_midxs)
-            
-            #print(gamma_midx)
+                else: gamma_midx,u_midx = dcp(self.comm_node.midx),None
+                
+            #Perform sampling iteration and increment time
             self.sampling_iteration(nn,gamma_midx,u_midx)
             nn += 1
-            self.log_data['samples'].append(nn)
-        #print(thresholds)
+            
         
             
             
@@ -801,6 +803,7 @@ class HPM(AlgorithmTemplate):
             athetai = np.array([avec(angle,self.cb_graph.M) @ np.conj(current_node.f) for angle in np.array([self.cb_graph.nodes[midx].steered_angle for midx in self.cb_graph.level_midxs[-1]])])
             mus = np.sum([alpha_hats[ll] *  athetai for ll in np.arange(self.channel.L)],axis = 0)
             if self.channel.sigma_v <= .1: sigma_v_temp = .1
+            else: sigma_v_temp = dcp(self.channel.sigma_v)
             pdfs =  1/(np.pi * sigma_v_temp**2) * np.exp(-np.abs(z-mus)**2/(sigma_v_temp**2))
             
             nn_flops += 2 * self.cb_graph.M * N
@@ -1111,7 +1114,7 @@ class TASD(AlgorithmTemplate):
         
         self.set_best()
         
-    def run_base_alg(self, current_midxs = None):
+    def run_base_alg(self, current_midxs = None,update_logs = True):
         """
         Description
         -----------
@@ -1362,9 +1365,10 @@ class TASD(AlgorithmTemplate):
             self.channel.fluctuation(nn,self.cb_graph.min_max_angles)
             
         est_best_midx = current_midxs[np.argmax(empirical_mean_rewards)]
-        self.log_data['samples'].append(nn)
-        self.log_data['relative_spectral_efficiency'].append(self.calculate_relative_spectral_efficiency(nodes[est_best_midx]))
-        self.log_data['path'].append(est_best_midx)
+        if update_logs:
+            self.log_data['samples'].append(nn)
+            self.log_data['relative_spectral_efficiency'].append(self.calculate_relative_spectral_efficiency(nodes[est_best_midx]))
+            self.log_data['path'].append(est_best_midx)
         return est_best_midx,nn
 
     def update_node(self,node,r,current_midxs):
@@ -1496,9 +1500,6 @@ class NPHTS(TASD):
             else:
                 #tas_instance_h = TASD({'cb_graph' : self.cb_graph, 'channel' : self.channel, 'delta' : self.deltas[hh], 'epsilon' : self.epsilon})
                 recommendation_midx,num_samples = self.run_base_alg(current_midxs)
-                # self.log_data['relative_spectral_efficiency'].append(self.calculate_relative_spectral_efficiency(nodes[recommendation_midx]))
-                # self.log_data['samples'].append(num_samples)
-                # self.log_data['path'].append(recommendation_midx)
                 
                 #Include the best sibling of recommended beam
                 if recommendation_midx == nodes[recommendation_midx].post_sibling:
@@ -1513,3 +1514,5 @@ class NPHTS(TASD):
                         
                 current_midxs = np.hstack([nodes[midx].zoom_in_midxs for midx in recommendation_midxs])
                 nn += num_samples
+if __name__ == '__main__':
+    main()
