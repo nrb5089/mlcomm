@@ -12,7 +12,7 @@ The package offers the following submodules targeted at Uniform Linear Array (UL
     
 - mlcomm/algorithms: multi-arm bandit-based algorithms including
     - Hierarchical Optimal Sampling for Unimodal bandits (HOSUB) [REF](https://doi.org/10.1109/ICC42927.2021.9500373)
-    - Dynamic Beam Zooming (DBZ) [REF]   
+    - Dynamic Beam Zooming (DBZ) [REF](http://arxiv.org/abs/2209.02896) 
     - Hierarchical Posterior Matching (HPM) [REF](https://doi.org/10.1109/JSAC.2019.2933967)
     - Active Beam Tracking (ABT) [REF](https://doi.org/10.1109/ICC42927.2021.9500601)
     - Two-Phase Heteroscedastic Track-and-Stop (2PHTS) [REF](https://doi.org/10.1109/TWC.2022.3217131)
@@ -20,7 +20,7 @@ The package offers the following submodules targeted at Uniform Linear Array (UL
 - mlcomm/channels
     - Additive White Gaussian Noise (AWGN) 
     - Rician AR1 [REF](https://doi.org/10.1109/JSAC.2019.2933967)
-    - Dynamic Motion [REF]
+    - Dynamic Motion [REF](http://arxiv.org/abs/2209.02896)
     - NYU Sim (preset) [REF](https://doi.org/10.1109/ICC.2017.7996792)
     
 
