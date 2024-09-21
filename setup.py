@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 setup(name='mlcomm',
       version='0.3',
       description='Package of ML algorithms for communication',
-      url='https://github.gatech.edu/mb364/mlcomm',
+      url='https://github.com/nrb5089/mlcomm',
       author='Nathan Blinn, Matthieu Bloch, Jana Boerger',
       author_email='nblinn6@gatech.edu',
       license='TBD',
