@@ -59,8 +59,8 @@ In order to reproduce the experiments from [1] and [2], please follow the instru
     - Simulations attempt to utilize multiple processors on the host machine.
 3. Data is logged in ```data/ia``` or ```data/dm```, respectively.
 
-[1] N. Blinn and M. Bloch, “Multi-armed bandit dynamic beam zoomingfor mmwave alignment and tracking,” 2024. [Online]. Available: https://arxiv.org/abs/2209.02896
-[2] N. Blinn and M. Bloch, "Track-and-Stop for Initial Alignment and Tracking," 2024, (In Review) 
+- [1] N. Blinn and M. Bloch, “Multi-armed bandit dynamic beam zoomingfor mmwave alignment and tracking,” 2024. [Online]. Available: https://arxiv.org/abs/2209.02896
+- [2] N. Blinn and M. Bloch, "Track-and-Stop for Initial Alignment and Tracking," 2024, (In Review) 
 
 ## Documentation
 
