@@ -30,25 +30,26 @@ import numpy as np
 from copy import deepcopy as dcp
 from scipy.special import lambertw as W
 from scipy.special import erf
-from mlcomm.algorithms import *
-from mlcomm.codebooks import *
-from mlcomm.channels import *
-from mlcomm.util import *
+from algorithms import *
+from codebooks import *
+from channels import *
+from util import *
 
 
 NUM_PATHS = 5
-SNR = 10 #in dB
+SNR = 50#in dB
 
 def main():
+    init_figs()
     #hosub_multi_run()
+    #hba_multi_run()
     #hpm_multi_run()
     #abt_run()
     #nphts_multi_run()
     #dbz_calculate_sample_windows_demo()
-    #dbz_multi_run_stationary()
+    dbz_multi_run_stationary()
     #dbz_run()
-    tasd_beam_subset_demo()
-    #nphts_multi_run()
+    #tasd_beam_subset_demo()
     return 0
 
 
@@ -77,7 +78,7 @@ def dbz_calculate_sample_windows_demo():
     pickle.dump(data_dict, open('../mlcomm/demo_samples.pkl','wb'))
     pickle.dump(data_dict, open('demo_samples.pkl','wb'))
 
-def calculate_dbz_sample_window_lengths(cb_graph, snr_dbs = np.arange(0,50), sigma_us_degs = [.001,.0005,.00025,.0001], tau = 1, eps = .001, delta = .1, a = 1, b = .1, c = .1):
+def calculate_dbz_sample_window_lengths(cb_graph, snr_dbs = np.arange(0,50), sigma_us_degs = [.001,.0005,.00025,.0001], tau = 1, eps = .001, delta = .1, a = 1, b = .1, c = 1e-6):
         """
         
         Description
@@ -216,65 +217,97 @@ def calculate_dbz_sample_window_lengths(cb_graph, snr_dbs = np.arange(0,50), sig
         return data_dict
     
 def dbz_multi_run_stationary():
-   for seed in np.arange(100):
-    #for seed in [15]:
+    rse = []
+    samples = []
+    b = .1
+    c = 1e-6
+    print(f"Starting runs with b = {b} and c = {c} at SNR = {SNR} dB")
+    for seed in np.arange(100):
         
-        if seed >= 0: print(f'Initialized RNG in main loop. Seed = {seed}')
         np.random.seed(seed = seed)
-        cb_graph = load_codebook(filename='demo_binary_codebook', loadpath='./')
+        cb_graph = load_codebook(filename='demo_ternary_codebook', loadpath='./')
         aoa_aod_degs = np.random.uniform(cb_graph.min_max_angles[0],cb_graph.min_max_angles[1]) * 180/np.pi
         
         #Channel Option
         #channel = NYU1({'num_elements' : 64, 'angle_degs' : aoa_aod_degs, 'environment' : 'LOS', 'scenario' : 'Rural', 'center_frequency_ghz' : 28, 'propagation_distance' : 50, 'noise_variance' : 1e-10, 'seed' : 0})
-        channel = RicianAR1({'num_elements' : cb_graph.M, 'angle_degs' : aoa_aod_degs, 'fading_1' : 1, 'fading_2' : 10, 'correlation' : 0.024451, 'num_paths' : NUM_PATHS, 'snr' : SNR, 'seed' : seed})
+        # channel = RicianAR1({'num_elements' : cb_graph.M, 'angle_degs' : aoa_aod_degs, 'fading_1' : 1, 'fading_2' : 10, 'correlation' : 0.024451, 'num_paths' : NUM_PATHS, 'snr' : SNR, 'seed' : seed})
+        channel = DynamicMotion({'num_elements' : cb_graph.M, 'sigma_u_degs' : 0, 'initial_angle_degs' : aoa_aod_degs,  'fading' : .995, 'time_step': 1,  'num_paths' : NUM_PATHS,  'snr' : SNR, 'scenario' : 'LOS', 'mode' : 'WGNA',  'seed' : seed})
         #channel = AWGN({'num_elements' : cb_graph.M, 'angle_degs' : aoa_aod_degs, 'snr' : 20, 'seed' : seed})
         
-        bandit = DBZ({'cb_graph' : cb_graph, 'channel' : channel, 'delta' : .1, 'epsilon' : .01, 'sample_window_lengths' : [0 for hh in range(cb_graph.H)], 'mode' : 'stationary', 'levels_to_play' : [0,0,0,1,0,1], 'a' : 1, 'b' : .01, 'c' : .001})
+        
+        bandit = DBZ({'cb_graph' : cb_graph, 'channel' : channel, 'delta' : .01, 'epsilon' : 1e-7, 'sample_window_lengths' : [0 for hh in range(cb_graph.H)], 'mode' : 'stationary', 'levels_to_play' : [1,1,1,1], 'a' : 1, 'b' : b, 'c' : c}) 
+        
         bandit.run_alg(0)
-        report_bai_result(bandit)
-    
+        rse.append(bandit.log_data['relative_spectral_efficiency'][-1])
+        samples.append(bandit.log_data['samples'])
+        
+        # report_bai_result(bandit)
+        if seed != 0 and np.mod(seed+1,10) == 0: print(f" Avg RSE: {np.mean(rse)}, Avg Samples: {np.mean(samples)}")
 
 def dbz_run():
     init_figs()
+    seed = 1333
+    np.random.seed(seed = seed)
     
     data_dict = pickle.load(open('demo_samples.pkl','rb'))
-    snr_idx = 20
-    snr_db = data_dict['snr_dbs'][snr_idx]
-    print(f"SNR = {snr_db} chosen based on index {snr_idx}.")
-    sample_window_lengths = data_dict['samples_complexity'][snr_idx]
-    print(f'Sample window lengths: {sample_window_lengths}')
-    cb_graph = load_codebook(filename='demo_ternary_codebook', loadpath='./')
-    channel = DynamicMotion({'num_elements' : cb_graph.M, 'sigma_u_degs' : .001, 'initial_angle_degs' : 90,  'fading' : .995, 'time_step': 1, 'num_paths' : NUM_PATHS, 'snr' : snr_db, 'mode' : 'WGNA', 'seed' : 0})
-    bandit = DBZ({'cb_graph' : cb_graph, 'channel' : channel, 'delta' : .1, 'epsilon' : .01, 'sample_window_lengths' : sample_window_lengths, 'mode' : 'non-stationary', 'levels_to_play' : [1,1,1,1], 'a' : 1, 'b' : .01, 'c' : .0001})
     
-    bandit.run_alg(2000)
+    cb_graph = load_codebook(filename='demo_ternary_codebook', loadpath='./')
+    aod_degs = np.random.uniform(cb_graph.min_max_angles[0],cb_graph.min_max_angles[1]) * 180/np.pi
+    # channel = DynamicMotion({'num_elements' : cb_graph.M, 'sigma_u_degs' : .0005, 'initial_angle_degs' : aod_degs,  'fading' : .995, 'time_step': 1, 'num_paths' : NUM_PATHS, 'snr' : snr_db, 'mode' : 'WGNA', 'seed' : 93})
+    channel = DynamicMotion({'num_elements' : cb_graph.M, 'sigma_u_degs' : .0005, 'initial_angle_degs' : aod_degs,  'fading' : .995, 'time_step': 1, 'num_paths' : NUM_PATHS, 'snr' : SNR, 'mode' : 'WGNA', 'seed' : 93})
+    # bandit = DBZ({'cb_graph' : cb_graph, 'channel' : channel, 'delta' : .1, 'epsilon' : .01, 'sample_window_lengths' : sample_window_lengths, 'mode' : 'non-stationary', 'levels_to_play' : [1,1,1,1], 'a' : 1, 'b' : 1e-2, 'c' : 1e-3})
+    bandit = DBZ({'cb_graph' : cb_graph, 'channel' : channel, 'delta' : .1, 'epsilon' : 1e-7, 'sample_window_lengths' : np.array([45, 30, 15,  9,]), 'mode' : 'non-stationary', 'levels_to_play' : [1,1,1,1], 'a' : 1, 'b' : 1e-2, 'c' : 1e-5})
+    
+    bandit.run_alg(1000)
     fig,ax = plt.subplots()
     ax.plot(bandit.log_data['relative_spectral_efficiency'])
     ax.set_ylim([0,1])
-    ax.set_xlim([0,2000])
+    ax.set_xlim([0,1000])
     ax.set_xlabel('n')
     ax.set_ylabel('Relative Spectral Efficiency')
 
+def hba_multi_run():
+    rse = []
+    samples = []
+    for seed in range(100):
+        np.random.seed(seed = seed)
+        cb_graph = load_codebook(filename='demo_ternary_codebook', loadpath='./')
+        aoa_aod_degs = np.random.uniform(cb_graph.min_max_angles[0],cb_graph.min_max_angles[1]) * 180/np.pi
+        channel = DynamicMotion({'num_elements' : cb_graph.M, 'sigma_u_degs' : 0, 'initial_angle_degs' : aoa_aod_degs,  'fading' : .995,  'time_step': 1, 'num_paths' : NUM_PATHS,  'snr' : SNR, 'scenario' : 'LOS','mode' : 'WGNA', 'seed' : seed})
+        bandit = HBA({'cb_graph' : cb_graph, 'channel' : channel, 'zeta' : .0001, 'rho1' : 3, 'gamma' : 0.9})
+        bandit.run_alg()
+        rse.append(bandit.log_data['relative_spectral_efficiency'][-1])
+        samples.append(bandit.log_data['samples'])
+        #report_bai_result(bandit)
+        if seed != 0 and np.mod(seed+1,10) == 0: print(f" Avg RSE: {np.mean(rse)}, Avg Samples: {np.mean(samples)}")
+
 def hpm_multi_run():
+    rse = []
+    samples = []
     for seed in np.arange(100):
-        if seed == 0: print(f'Initialized RNG in main loop. Seed = {seed}')
+    #for seed in [56]:
+        # if seed >= 0: print(f'Initialized RNG in main loop. Seed = {seed}')
         np.random.seed(seed = seed)
         cb_graph = load_codebook(filename='demo_binary_codebook', loadpath='./')
         aoa_aod_degs = np.random.uniform(cb_graph.min_max_angles[0],cb_graph.min_max_angles[1]) * 180/np.pi
         
         #Channel Option
         #Option between Rician fading and just AWGN
-        channel = RicianAR1({'num_elements' : cb_graph.M, 'angle_degs' : aoa_aod_degs, 'fading_1' : 1, 'fading_2' : 10, 'correlation' : 0.024451, 'num_paths' : NUM_PATHS, 'snr' : SNR, 'seed' : seed})
+        #channel = RicianAR1({'num_elements' : cb_graph.M, 'angle_degs' : aoa_aod_degs, 'fading_1' : 1, 'fading_2' : 10, 'correlation' : 0.024451, 'num_paths' : NUM_PATHS, 'snr' : SNR, 'seed' : seed})
+        channel = DynamicMotion({'num_elements' : cb_graph.M, 'sigma_u_degs' : 0, 'initial_angle_degs' : aoa_aod_degs,  'fading' : .995,  'time_step': 1, 'num_paths' : NUM_PATHS,  'snr' : SNR, 'scenario' : 'LOS','mode' : 'WGNA', 'seed' : seed})
         #channel = AWGN({'num_elements' : cb_graph.M, 'angle_degs' : aoa_aod_degs, 'snr' : SNR, 'seed' : seed})
         
-        bandit = HPM({'cb_graph' : cb_graph, 'channel' : channel, 'time_horizon' : 100, 'delta' : .01, 'fading_estimation' : 'exact', 'mode' : 'VL'})
+        bandit = HPM({'cb_graph' : cb_graph, 'channel' : channel, 'time_horizon' : 100000, 'delta' : .01, 'fading_estimation' : 'exact', 'mode' : 'VL'})
         bandit.run_alg()
-        report_bai_result(bandit)
-
+        rse.append(bandit.log_data['relative_spectral_efficiency'][-1])
+        samples.append(bandit.log_data['samples'])
+        #report_bai_result(bandit)
+        if seed != 0 and np.mod(seed+1,10) == 0: print(f" Avg RSE: {np.mean(rse)}, Avg Samples: {np.mean(samples)}")
+        
 def abt_run():
     init_figs()
     cb_graph = load_codebook(filename='demo_binary_codebook', loadpath='./')
-    channel = DynamicMotion({'num_elements' : cb_graph.M, 'sigma_u_degs' : .001, 'initial_angle_degs' : 90,  'fading' : .995, 'time_step': 1, 'num_paths' : NUM_PATHS, 'snr' : SNR, 'mode' : 'WGNA', 'seed' : 0})
+    channel = DynamicMotion({'num_elements' : cb_graph.M, 'sigma_u_degs' : .0001, 'initial_angle_degs' : 91,  'fading' : .995, 'time_step': 1, 'num_paths' : NUM_PATHS, 'snr' : SNR, 'mode' : 'WGNA', 'seed' : 2})
     bandit = ABT({'cb_graph' : cb_graph, 'channel' : channel, 'delta' : .01, 'fading_estimation' : 'exact'})
     
     bandit.run_alg(2000)
@@ -290,27 +323,39 @@ def tasd_beam_subset_demo():
     cb_graph = load_codebook(filename='demo_binary_codebook', loadpath='./')
     
     #Option between Rician fading and just AWGN
-    channel = RicianAR1({'num_elements' : cb_graph.M, 'angle_degs' : 90, 'fading_1' : 1, 'fading_2' : 10, 'correlation' : 0.024451, 'num_paths' : NUM_PATHS, 'snr' : SNR, 'seed' : 0})
-    
+    # channel = RicianAR1({'num_elements' : cb_graph.M, 'angle_degs' : 90, 'fading_1' : 1, 'fading_2' : 10, 'correlation' : 0.024451, 'num_paths' : NUM_PATHS, 'snr' : SNR, 'seed' : 0})
+    channel = DynamicMotion({'num_elements' : cb_graph.M, 'sigma_u_degs' : 0, 'initial_angle_degs' : aoa_aod_degs,  'fading' : .995,  'time_step': 1, 'num_paths' : NUM_PATHS,  'snr' : SNR, 'scenario' : 'LOS','mode' : 'WGNA', 'seed' : seed})
     bandit = TASD({'cb_graph' : cb_graph, 'channel' : channel, 'delta' : .01, 'epsilon' : .001})
     bandit.run_base_alg([90,91,92,93,94,95,96])  #These are the known midxs with the codebook used that surround the best midx (93).
     report_bai_result(bandit)
     
 def nphts_multi_run():
+    rse = []
+    samples = []
     for seed in np.arange(100):
         if seed == 0: print(f'Initialized RNG in main loop. Seed = {seed}')
         np.random.seed(seed = seed)
-        cb_graph = load_codebook(filename='demo_binary_codebook', loadpath='./')
+        cb_graph = load_codebook(filename='demo_ternary_codebook', loadpath='./')
         aoa_aod_degs = np.random.uniform(cb_graph.min_max_angles[0],cb_graph.min_max_angles[1]) * 180/np.pi
         
         #Channel Option
         #channel = NYU1({'num_elements' : 64, 'angle_degs' : 90, 'propagation_condition' : 'LOS', 'setting' : 'Rural', 'center_frequency_ghz' : 28, 'propagation_distance' : 50, 'noise_variance' : 1e-10, 'seed' : 0})
-        channel = RicianAR1({'num_elements' : cb_graph.M, 'angle_degs' : aoa_aod_degs, 'fading_1' : 1, 'fading_2' : 10, 'correlation' : 0.024451, 'num_paths' : NUM_PATHS, 'snr' : SNR, 'seed' : seed})
+        # channel = RicianAR1({'num_elements' : cb_graph.M, 'angle_degs' : aoa_aod_degs, 'fading_1' : 1, 'fading_2' : 10, 'correlation' : 0.024451, 'num_paths' : NUM_PATHS, 'snr' : SNR, 'seed' : seed})
+        channel = DynamicMotion({'num_elements' : cb_graph.M, 'sigma_u_degs' : 0, 'initial_angle_degs' : aoa_aod_degs,  'fading' : .995,  'time_step': 1, 'num_paths' : NUM_PATHS,  'snr' : SNR, 'scenario' : 'LOS','mode' : 'WGNA', 'seed' : seed})
         #channel = AWGN({'num_elements' : cb_graph.M, 'angle_degs' : aoa_aod_degs, 'snr' : 20, 'seed' : seed})
         
-        bandit = NPHTS({'cb_graph' : cb_graph, 'channel' : channel, 'levels_to_play' : [0, 0, 0, 1, 0, 1],'delta' : [0, 0, 0, .05, 0, .05], 'epsilon' : .001})
+        bandit = NPHTS({'cb_graph' : cb_graph, 
+                           'channel' : channel, 
+                           'delta' : [.025, .025, .025, .025], 
+                           'epsilon' : 1e-3, #Testing different values of epsilon .001, was fine.
+                           # 'sample_window_lengths' : [45, 13, 10,  9,],
+                           'mode' : 'stationary', 
+                           'levels_to_play' : [1,1,1,1]})
         bandit.run_alg()
-        report_bai_result(bandit)
+        rse.append(bandit.log_data['relative_spectral_efficiency'][-1])
+        samples.append(np.sum(bandit.log_data['samples']))
+        if seed != 0 and np.mod(seed+1,1) == 0: print(f" Avg RSE: {np.mean(rse)}, Avg Samples: {np.mean(samples)}")
+        # report_bai_result(bandit)
     
 def report_bai_result(bandit):
     """
@@ -327,10 +372,10 @@ def report_bai_result(bandit):
     log_data = bandit.log_data
     print(f'Estimated Best Node midx: {log_data["path"][-1]} after {np.sum(log_data["samples"])} samples')
     print(f'Actual Best Node midx: {bandit.best_midx}')
-    try: 
-        print(f'Resultant Relative Spectral Efficiency: {bandit.calculate_relative_spectral_efficiency(bandit.cb_graph.nodes[log_data["path"][-1]])}')
-    except:
-        print(f'Resultant Relative Spectral Efficiency: {log_data["relative_spectral_efficiency"][-1]}')
+    # try: 
+    #     print(f'Resultant Relative Spectral Efficiency: {bandit.calculate_relative_spectral_efficiency(bandit.cb_graph.nodes[log_data["path"][-1]])}')
+    # except:
+    print(f'Resultant Relative Spectral Efficiency: {log_data["relative_spectral_efficiency"][-1]}')
     print('\n')
     
 if __name__ == '__main__': 

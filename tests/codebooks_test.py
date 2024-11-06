@@ -28,40 +28,27 @@ import sys
 sys.path.insert(0,'../mlcomm')
 import numpy as np
 import matplotlib.pyplot as plt
-from mlcomm.codebooks import *
-from mlcomm.util import * 
+from codebooks import *
+from util import * 
 
 def main():
     plt.close('all')
-    init_figs()
-
-    #cb_graph = load_codebook(filename='demo_binary_codebook', loadpath='./')
-    cb_graph = load_codebook(filename='demo_ternary_codebook', loadpath='./')
+    # init_figs()
+    print("Generating Codebooks...")
+    cb_graph = build_dbz_codebook()
+    cb_graph = build_binary_codebook()
+    print("Codebooks created successfully!")
+    if False:
+        h = 0
+        i = 100
+        
+        
+        
+        fig = show_level_base_set(cb_graph,h)
+        fig = show_zoom_out(cb_graph,i)
+        fig = show_subset(cb_graph,[(0,100),(1,100),(2,100),(3,100),(0,109),(1,109),(2,109),(3,109),(0,30),(1,30),(2,30),(3,30),(0,25),(1,25),(2,25),(3,25)  ])
+        fig.savefig(r'D:\OneDrive\Projects\mlcomm\mlcomm-private\mlcomm\docs\tutorials\media\overlap_ternary_1')
     
-    # fig = show_level(cb_graph,3)
-    h = 0
-    i = 100
-    
-    
-    
-    # fig = show_level_base_set(cb_graph,h)
-    # fig.savefig(r'D:\OneDrive\Projects\mlcomm\mlcomm-private\mlcomm\docs\tutorials\media\base_set_binary_'+ f'{h}')
-    # fig = show_zoom_out(cb_graph,i)
-    # fig.savefig(r'D:\OneDrive\Projects\mlcomm\mlcomm-private\mlcomm\docs\tutorials\media\zoom_out_binary_' + f'{i}')
-    # fig = show_zoom_in(cb_graph,0)
-    # fig.savefig(r'D:\OneDrive\Projects\mlcomm\mlcomm-private\mlcomm\docs\tutorials\media\zoom_in_binary_' + f'{i}')
-    
-    fig = show_level_base_set(cb_graph,h)
-    fig.savefig(r'D:\OneDrive\Projects\mlcomm\mlcomm-private\mlcomm\docs\tutorials\media\base_set_ternary_'+ f'{h}')
-    fig = show_zoom_out(cb_graph,i)
-    fig.savefig(r'D:\OneDrive\Projects\mlcomm\mlcomm-private\mlcomm\docs\tutorials\media\zoom_out_ternary_' + f'{i}')
-    # fig = show_zoom_in(cb_graph,i)
-    # fig.savefig(r'D:\OneDrive\Projects\mlcomm\mlcomm-private\mlcomm\docs\tutorials\media\zoom_in_ternary_' + f'{i}')
-    fig = show_subset(cb_graph,[(0,100),(1,100),(2,100),(3,100),(0,109),(1,109),(2,109),(3,109),(0,30),(1,30),(2,30),(3,30),(0,25),(1,25),(2,25),(3,25)  ])
-    fig.savefig(r'D:\OneDrive\Projects\mlcomm\mlcomm-private\mlcomm\docs\tutorials\media\overlap_ternary_1')
-    
-    # fig = show_subset(cb_graph,[(0,30),(1,30),(2,30),(3,30),(0,25),(1,25),(2,25),(3,25) ])
-    # fig.savefig(r'D:\OneDrive\Projects\mlcomm\mlcomm-private\mlcomm\docs\tutorials\media\overlap_ternary_1')
     plt.show()
     
 
@@ -80,9 +67,13 @@ def build_dbz_codebook():
     Constructs and saves codebook from DBZ paper.
     """
     cb_graph = TernaryPointedHierarchicalCodebook({'num_initial_non_overlapping' : 5, 'depth' : 4, 'num_elements' : 128, 'num_rf_chains' : 32, 'num_data_streams' : 1, 'min_max_angles_degs' : (30,150)})
-    save_codebook(cb_graph, filename='../mlcomm/demo_ternary_codebook',savepath = './')
+    #save_codebook(cb_graph, filename='../mlcomm/demo_ternary_codebook',savepath = './')
     save_codebook(cb_graph, filename='demo_ternary_codebook',savepath = './')
     
+def build_binary_codebook():
+    cb_graph = BinaryHierarchicalCodebook({'depth':7, 'num_elements' : 128, 'num_rf_chains' : 32, 'num_data_streams' : 1, 'min_max_angles_degs' : (30,150)})
+    # save_codebook(cb_graph, filename='../mlcomm/demo_binary_codebook',savepath = './')
+    save_codebook(cb_graph, filename='demo_binary_codebook',savepath = './')
     
 ## Plots
 def show_level(cb_graph,hh,show_every_other = 1):
@@ -272,14 +263,14 @@ def show_subset(cb_graph,hituples):
         hh = hituple[0]
         midx = cb_graph.level_midxs[hh][hituple[1]]
         rss = 10*np.log10(np.abs(np.conj(cb_graph.nodes[midx].f)@A_fine)**2)
-        ax.plot(phi_fine,rss, linewidth = 2.5, color = colors[hh])
+        ax.plot(phi_fine,rss, linewidth = 1, color = colors[hh])
     ax.set_rmax(0)
     ax.set_rmin(-20)
     ax.set_thetamin(0)
     ax.set_thetamax(180)
     ax.set_xticks(np.arange(0, np.pi + np.pi/6, np.pi/6))
     ax.set_yticklabels([])
-    ax.tick_params(axis='both', which='major', labelsize=26, length=10, width=2)
+    ax.tick_params(axis='both', which='major', labelsize=13, length=10, width=2)
     return fig
 if __name__ == '__main__':
     main()

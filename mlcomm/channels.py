@@ -27,11 +27,14 @@ OTHER DEALINGS IN THE SOFTWARE.
 import numpy as np
 import pickle
 import os
+import warnings
+from copy import deepcopy as dcp
 import matplotlib.pyplot as plt
 from scipy.signal import convolve2d
 from scipy.special import erf
 import scipy.io
-from mlcomm.util import * 
+from time import time
+from util import * 
 
 class BasicChannel:
     """
@@ -78,22 +81,22 @@ class BasicChannel:
         self.seed = params['seed']
         #print('Initializing random number generator seed within BasicChannel')
         #np.random.seed(seed = self.seed)
-        
-    def array_response(self,transmit_power_dbw = 1,with_noise = True):
+
+    def array_response(self,transmit_power_dbm = 0,with_noise = True):
         """
         
         Notes
         -----
-        The arg parameter 'transmit_power_dbw' is used only for debugging in this particular class object.
+        The arg parameter 'transmit_power_dbm' is used only for debugging in this particular class object.
         
         It is also a placeholder so that algorithms may use either channel model.
         
         """
-        tx_power_watts = 10**(transmit_power_dbw/10)
+        tx_power_mwatts = 10**(transmit_power_dbm/10)
         if with_noise:
-            return np.sqrt(tx_power_watts) * self.ht + self.sigma_v * randcn(len(self.ht))
+            return np.sqrt(tx_power_mwatts) * self.ht + self.sigma_v * randcn(len(self.ht))
         else: 
-            return np.sqrt(tx_power_watts) * self.ht
+            return np.sqrt(tx_power_mwatts) * self.ht
 
 class Channel:
     """
@@ -136,13 +139,16 @@ class Channel:
         self.sigma_v = np.sqrt(params['noise_variance'])
         self.ht = [0.0 + 0.0j]#placeholder channel response
         self.seed = params['seed']
-        print('Initializing random number generator seed within Channel')
-        np.random.seed(seed = self.seed)
+        # print(f'Initializing random number generator seed within Channel: {self.seed}.')
+        # np.random.seed(seed = self.seed)
         
-    def array_response(self,transmit_power_dbw, with_noise = True):
-        tx_power_watts = 10**(transmit_power_dbw/10)
-        return np.sqrt(tx_power_watts) * self.ht + self.sigma_v * randcn(len(self.ht))
-
+    def array_response(self,transmit_power_dbm = 0, with_noise = True):
+        tx_power_mwatts = 10**(transmit_power_dbm/10)
+        out = np.sqrt(tx_power_mwatts) * self.ht
+        if with_noise:
+            out = out + self.sigma_v * randcn(len(self.ht))
+        return out
+    
 class AWGN(BasicChannel):
     """
     Description
@@ -177,7 +183,7 @@ class AWGN(BasicChannel):
         self.L = 1
         self.ht = avec(self.angle,self.M)
     
-    def fluctuation(self,*args):
+    def fluctuation(self,*args,**kwargs):
         #Do nothing, yay!
         return
     
@@ -498,6 +504,7 @@ class NYU1(Channel):
                         Propagation distance in meters.
                     'noise_variance' : float
                         Noise variance of the channel.
+
         """
         super().__init__(params)
         self.M = params['num_elements']
@@ -580,7 +587,731 @@ class NYU1(Channel):
     def fluctuation(self,*args):
         #Do nothing, yay!
         return
+    
+class NYU2(Channel):
+    """
+    
+    Description
+    ------------
+    
+    Channel model based on the publications from NYU Wireless, many functions are derived directly from the NYU source code (https://wireless.engineering.nyu.edu/nyusim/)
+    
+    [1] Introduces the model and how to construct it, [2] introduces NYU Sim, and [3] adds the spatial consistency effects on top of [1] into the utility in [2] with additional data/effects from [4,5].
+    
+    Generates a grid for correlated spatial variables (encompassing both LOS and NLOS environments) that is of size 400 x 400 meters.  The array is placed at the center
+    of the 400 meters and is assumed at (x,y) = (0,0).
+    
+    [1] Samimi, Mathew K., and Theodore S. Rappaport. "3-D millimeter-wave statistical channel model for 5G wireless system design." IEEE Transactions on Microwave Theory and Techniques 64.7 (2016): 2207-2225.
+    
+    [2] Sun, Shu, George R. MacCartney, and Theodore S. Rappaport. "A novel millimeter-wave channel simulator and applications for 5G wireless communications." 2017 IEEE international conference on communications (ICC). IEEE, 2017.
+    
+    [3] Ju, Shihao, and Theodore S. Rappaport. "Simulating motion-incorporating spatial consistency into NYUSIM channel model." 2018 IEEE 88th vehicular technology conference (VTC-Fall). IEEE, 2018.
+    
+    [4] S. Ju, O. Kanhere, Y. Xing and T. S. Rappaport, “A Millimeter-Wave Channel Simulator NYUSIM with Spatial Consistency and Human Blockage” in IEEE 2019 Global Communications Conference, pp. 1–7, Dec. 2019.
+    
+    [5] S. Sun et al., "Investigation of Prediction Accuracy, Sensitivity, and Parameter Stability of Large-Scale Propagation Path Loss Models for 5G Wireless Communications," in IEEE Transactions on Vehicular Technology, vol. 65, no. 5, pp. 2843-2860, May 2016.
+    
+    
+    The channel has granularity of squares 1x1 meter for characterizing channel fading effects in a 400mx400m grid.  When the Mobile Entity (ME) translates from one grid square to another, 
+    
+    Many functions are directly translated from the NYU Sim MATLAB Source Code, including ``get_los_map``, ``get_sf_map``, ``get_delay_info``.
+    
+    Attributes
+    -----------
+    
+    
+    Methods
+    --------
+    
+        set_environment
+            Sets the object instance environment variables, i.e., environment 'LOS', 'NLOS', with specified scenario according to the ME position triple passed to the method as an arg.
+            
+        fluctuation
+            Adjusts the channel based on ME motion, if the ME changes environment (i.e., 'NLOS' to 'LOS'), the channel reinitializes path variables.
+    
+    Notes
+    ------
+    This implementation does not consider polarization, human blockage, or indoor-outdoor penetration loss factors
+    """
+    
+    
+    
+    def __init__(self, params):
+        """
+        Initializes the channel model with the given parameters.
 
+        Parameters
+        ----------
+            params : dict
+                Dictionary containing the following keys:
+                    'num_elements' : int
+                        Number of elements in the array.
+                    'scenario' : str
+                        Environmental scenario ('RMa', 'UMa', 'UMi').
+                    'center_frequency_ghz' : float
+                        Center frequency in GHz (valid choices are 28 and 72).
+                    'initial_me_position' : triple of floats (x,y,z)
+                        Initial position of the mobile entity. Ignored in NLOS environment, chosen from distribution d~U(60,200) when NLOS
+                    'initial_me_velocity' : triple of floats (x_dot, y_dot, z_dot)
+                        Initial velocity of mobile entity.
+                    'sigma_u_m_s2' : float
+                        Variance governing Gaussian distributed acceleration for x and y 
+                    'noise_variance' : float
+                        Noise variance of the channel.
+                    'map_generation_mode' : str
+                        Valid choices are "new" and "load".  If "load".  In "new" mode, saves the sf_maps and los_map as with the specified "map_index".  In "load" mode, loads the sf_maps and los_map with corresponding "map_index".  Saves/loads from specified directory by dict value "maps_dir"
+                    'map_index' : int
+                        Indicates the index used to load/save 
+                    'maps_dir' : str
+                        Path specifying where to save/load sf_maps and los_map
+        """
+        super().__init__(params)
+        
+        self.M = params['num_elements']
+        assert params['scenario'] == 'RMa' or params['scenario'] == 'UMa' or params['scenario'] == 'UMi', "Incorrect Enumerated Choice: Please choose 'RMa', 'UMa', 'UMi'"
+        self.scenario = params['scenario'] #Valid choice are 'Rural' and 'Urban'
+        assert params['center_frequency_ghz'] >= 28 and params['center_frequency_ghz'] <= 72, "Incorrect value for range of 'center_frqeuency_ghz', please enter value between 28 and 72 (may equal 28 or 72)."
+        self.center_frequency_ghz = params['center_frequency_ghz']#Valid choices are 28 and 72
+        
+        self.initial_me_position = params['initial_me_position'] 
+        self.initial_me_velocity = params['initial_me_velocity']
+        self.d_co = params['correlation_distance']
+        self.sigma_u = params['sigma_u_m_s2'] 
+        
+        self.h_BS = 20
+        self.h_MS = self.initial_me_position[2]
+        
+        self.me_position = dcp(self.initial_me_position)
+        self.me_velocity = dcp(self.initial_me_velocity)
+        
+        # Environment setting (pressure, humidity, foliage loss), precalculated using the internal NYU Sim function 'mpm93_forNYU' with the following parameters
+        p,u,temp,RR,Fol,dFol,folAtt = 1013.2, 50, 20, 150, 'No', 0, 0.4
+        atmos_idx = int(self.center_frequency_ghz - 28)
+
+        # Array of atmospheric data, index 0 corresponds to 28 GHz, and the last element corresponds to 72 GHz. The values are indexed by a granularity of 1 GHz
+        atmospheric_data = [
+            0.0275696495821050, 0.0285223128615362, 0.0294907100235393, 0.0304738786913288, 
+            0.0314711615494553, 0.0324821051200185, 0.0335063921991314, 0.0345437995000089, 
+            0.0355941718454488, 0.0366574070527800, 0.0377334480258621, 0.0388222802061213, 
+            0.0399239336901567, 0.0410384902849999, 0.0421660968285762, 0.0433069876179524, 
+            0.0444615213996605, 0.0456302434466445, 0.0468139941094057, 0.0480141112548014, 
+            0.0492328468819002, 0.0504743797624106, 0.0517481179557135, 0.0530795488960932, 
+            0.0545344415627232, 0.0562706349842568, 0.0593623445682586, 0.0607712292391748, 
+            0.0630861812700089, 0.0655605279727314, 0.0672754290475197, 0.0680387167444610, 
+            0.0686000087996802, 0.0686144442408844, 0.0672487882074241, 0.0636936157778784, 
+            0.0593854153534244, 0.0560543358076998, 0.0539190114727561, 0.0526854783490967, 
+            0.0519516460966182, 0.0514481942077645, 0.0510459061873077, 0.0506917824772509, 
+            0.0503652975384719]
+        
+        #Atmospheric loss factor in db/m
+        self.atmospheric_loss_factor_db_m  = atmospheric_data[atmos_idx] 
+        
+
+        #Build grid for spatial fading and los/nlos condition
+        half_grid_side_length = 200
+        self.pos_grid = []
+        index = 0
+        for yy in np.arange(-half_grid_side_length,half_grid_side_length):
+            for xx in np.arange(-half_grid_side_length,half_grid_side_length):
+                self.pos_grid.append(NYU2.SpatiallyCoherentPosition({'index': index, 'x' : xx, 'y': yy, 'z' : self.h_MS}))
+                index += 1
+                
+        # Generate LOS/NLOS map first, based on position, the set of parameters are used for that environment. 
+        # The NYU Sim code generates the SF map first, but has a dependency on LOS/NLOS condition, see 'sigma' attribute.
+        #I'm supposing their implementation was just to simplify the deployment and use where the UE moves only locally.  
+        #See the description in the user manual on page 36.
+        
+        if params['map_generation_mode'] == 'new':
+            t0 = time()
+            print('Creating LOS map...')
+            los_map = self.get_los_map(int(2*half_grid_side_length))
+            pickle.dump(los_map, open(params["maps_dir"] + f'/los_map_{params["map_index"]}.pkl','wb'))
+            print(f"Time required to generate LOS map: {time()-t0}")
+            
+            t0 = time()
+            print('Creating SF maps...')
+            #In order to build the SF map, I need to know sigma (fading paramter) which is dependent on LOS/NLOS.
+            sf_los_map, sf_nlos_map = self.get_sf_map(2*half_grid_side_length)
+            pickle.dump(sf_los_map, open(params["maps_dir"] + f'/sf_los_map_{params["map_index"]}.pkl','wb'))
+            pickle.dump(sf_nlos_map, open(params["maps_dir"] + f'/sf_nlos_map_{params["map_index"]}.pkl','wb'))
+            print(f"Time required to generate SF maps: {time()-t0}")
+            
+        elif params['map_generation_mode'] == 'load':
+            los_map = pickle.load(open(params["maps_dir"] + f'/los_map_{params["map_index"]}.pkl','rb'))
+            #print('Debugging with a LOS map of all ones!') 
+            #los_map = np.ones([400,400]) #Debugging purposes only.
+            sf_los_map = pickle.load(open(params["maps_dir"] + f'/sf_los_map_{params["map_index"]}.pkl','rb'))
+            sf_nlos_map = pickle.load(open(params["maps_dir"] + f'/sf_nlos_map_{params["map_index"]}.pkl','rb'))
+        
+        self.los_map = los_map
+        self.sf_los_map = sf_los_map
+        self.sf_nlos_map = sf_nlos_map
+        #Initiazlize grid of values indicating 'LOS' and 'NLOS' along with the value on the SF map value
+        for pos in self.pos_grid:
+            pos.los = los_map[pos.y+half_grid_side_length,pos.x+half_grid_side_length]
+            if pos.los == 1:
+                pos.sf = sf_los_map[pos.y,pos.x]
+                pos.los = 'LOS'
+            elif pos.los == 0:
+                pos.sf = sf_nlos_map[pos.y,pos.x]
+                pos.los = 'NLOS'
+        
+        #Initialize the environment
+        self.prev_environment = 'not set' #Just generic str so that it fails the logic test in fluctuation method and initializes
+        self.fluctuation(mode = 'initialization')
+        
+
+            
+    def set_environment(self):
+        """
+        Description
+        ------------
+        Based on the current location of the ME, stored as attribute triple, 'me_position', 
+        the position is cross-referenced with being LOS or NLOS and then paramters corresponding 
+        to the particular environment are assigned to change the state of the channel.
+        
+        The position is changed over time by calling the 'update_me' method, which applies a 
+        White Gaussian Accleration transition.
+        
+        
+        Parameters
+        ----------
+
+        Returns
+        -------
+        None.
+
+        """
+        pos_idx = self.get_grid_index(self.me_position[0],self.me_position[1],self.me_position[2]) #Index of spatially coherent grid based on ME initial position
+        
+        # Parameter setting based on the fields in Table III and IV in [1]
+        if self.pos_grid[pos_idx].los == 'LOS':
+            self.environment = 'LOS'
+            
+            # Path Loss Exponent (PLE) and Standard Deviation for Path Loss
+            if self.center_frequency_ghz == 28:
+                self.n_bar, self.sigma = 2.1, 3.6
+            elif self.center_frequency_ghz == 72:
+                self.n_bar, self.sigma = 2.0, 5.2 
+            else:
+                print("Warning: Value not specified as exactly 28 or 73 for 'center_frequency_ghz', Table III does not specify explicit values, taking intermediary for n_bar and sigma.")
+                self.n_bar, self.sigma = 2.05, 4.4  
+                
+            self.mu_AOD, self.mu_AOA = 1.9, 1.8
+            self.X_max = 0.2
+            self.mu_tau_ns = 123
+            self.Gamma_ns, self.sigma_Z = 25.9, 1
+            self.gamma_ns, self.sigma_U = 16.9, 6
+            self.mu_AOD_degs, self.sigma_AOD_degs = -12.6, 5.9
+            self.mu_AOA_degs, self.sigma_AOA_degs = 10.8, 5.3
+            self.sigma_theta_AOD_degs, self.sigma_phi_AOD_degs = 8.5, 2.5
+            self.sigma_theta_AOA_degs, self.sigma_phi_AOA_degs = 10.5, 11.5
+            
+        elif self.pos_grid[pos_idx].los == 'NLOS':
+            self.environment = 'NLOS'
+            self.propagation_distance = np.random.uniform(60,200)
+            if self.center_frequency_ghz == 28:
+                self.n_bar, self.sigma = 3.4, 9.7  # Path Loss Exponent (PLE) and Standard Deviation for Path Loss
+                self.mu_AOD, self.mu_AOA = 1.6, 1.6
+                self.X_max = 0.5
+                self.mu_tau_ns = 83
+                self.Gamma_ns, self.sigma_Z = 49.4, 3
+                self.gamma_ns, self.sigma_U = 16.9, 6
+                self.mu_AOD_degs, self.sigma_AOD_degs = -4.9, 4.5
+                self.mu_AOA_degs, self.sigma_AOA_degs = 3.6, 4.8
+                self.sigma_theta_AOD_degs, self.sigma_phi_AOD_degs = 9.0, 2.5
+                self.sigma_theta_AOA_degs, self.sigma_phi_AOA_degs = 10.1, 10.5
+            elif self.center_frequency_ghz == 73:
+                self.n_bar, self.sigma = 3.3, 7.6  # Path Loss Exponent (PLE) and Standard Deviation for Path Loss
+                self.mu_AOD, self.mu_AOA = 1.5, 2.5
+                self.X_max = 0.5
+                self.mu_tau_ns = 83
+                self.Gamma_ns, self.sigma_Z = 56.0, 3
+                self.gamma_ns, self.sigma_U = 15.3, 6
+                self.mu_AOD_degs, self.sigma_AOD_degs = -4.9, 4.5
+                self.mu_AOA_degs, self.sigma_AOA_degs = 3.6, 4.8
+                self.sigma_theta_AOD_degs, self.sigma_phi_AOD_degs = 7.0, 3.5
+                self.sigma_theta_AOA_degs, self.sigma_phi_AOA_degs = 6.0, 3.5
+            else:
+                print("Warning: Value not specified as exactly 28 or 73 for 'center_frequency_ghz', Table III does not specify explicit values, taking intermediary for n_bar and sigma.")
+                self.n_bar, self.sigma = 3.35, 8.65  # Path Loss Exponent (PLE) and Standard Deviation for Path Loss
+                self.mu_AOD, self.mu_AOA = 1.5, 2.1
+                self.X_max = 0.5
+                self.mu_tau_ns = 83
+                self.Gamma_ns, self.sigma_Z = 51.0, 3
+                self.gamma_ns, self.sigma_U = 15.5, 6
+                self.mu_AOD_degs, self.sigma_AOD_degs = -4.9, 4.5
+                self.mu_AOA_degs, self.sigma_AOA_degs = 3.6, 4.8
+                self.sigma_theta_AOD_degs, self.sigma_phi_AOD_degs = 11.0, 3.0
+                self.sigma_theta_AOA_degs, self.sigma_phi_AOA_degs = 7.5, 6.0
+                
+                
+    def fluctuation(self, nn=0, min_max_angles = (0,3.14159), tau = 1, mode = 'normal'):
+        """
+        Description
+        -----------
+        
+        Channel fluctuation, the ME undergoes motion and the environment is checked to be changed (i.e., from LOS to NLOS).  If so we reinitialize the angles in the respective way.  The first angle in the 'LOS' environment is always the ME relative to the BS.
+        
+        Parameters
+        ----------
+        mode : str
+            valid choices are 'normal' and 'intialization', defaults to 'normal'.  Set to 'initialization' in the __init__ method to get initial conditions for ME position.
+        """
+        assert mode == 'normal' or mode == 'initialization', "Please enter a valid kwarg selection for mode, valid choices are 'normal' and 'initialization'"
+        
+        if mode == 'normal':
+            self.update_me(tau = tau)
+            self.set_environment()
+        elif mode == 'initialization': 
+            self.set_environment()
+        
+        #Get ME position relative to grid index and spherical coordinate version
+        pos_idx = self.get_grid_index(self.me_position[0],self.me_position[1],self.me_position[2])  #Index of spatially coherent grid based on ME initial position
+        me_d,me_az,me_el = self.get_d_az_el(self.me_position[0], self.me_position[1], self.me_position[2])
+        
+        #If environment is the same as previous, update it accordingly
+        if self.environment == self.prev_environment:
+            self.path_loss_dB = 20* np.log10(4*np.pi*self.center_frequency_ghz * 1e9/3e8) + 10 * self.n_bar * np.log10(self.pos_grid[pos_idx].d) + self.atmospheric_loss_factor_db_m * self.pos_grid[pos_idx].d + self.pos_grid[pos_idx].sf
+            
+            vel_x,vel_y,vel_z = self.me_velocity[0],self.me_velocity[1],self.me_velocity[2]
+            
+            #These are from the User_manual_NYUSIM_v4  (3.25) for LOS and (3.26) for NLOS
+            xBern = np.random.randint(1,3,self.total_num_paths) #Vector of 1s and 2s of length self.total_num_paths
+            path_idx_start = 0
+            
+            #In a LOS scenario, the first path has no additional delay and is hence the strongest path.  No reflections.
+            if self.environment == 'LOS':
+                S_az_aod = (vel_y * np.cos(self.az_aod[0]) - vel_x * np.sin(self.az_aod[0]))/me_d/np.sin(self.el_aod[0]) 
+                S_el_aod = (vel_x * np.cos(self.az_aod[0])*np.cos(self.el_aod[0]) + vel_y*np.cos(self.el_aod[0])*np.sin(self.az_aod[0])-vel_z*np.sin(self.el_aod[0]))/me_d 
+                S_az_aoa = (vel_y * np.cos(self.az_aoa[0]) - vel_x * np.sin(self.az_aoa[0]))/me_d/np.sin(self.el_aoa[0]) 
+                S_el_aoa = (vel_x * np.cos(self.az_aoa[0])*np.cos(self.el_aoa[0]) + vel_y*np.cos(self.el_aoa[0])*np.sin(self.az_aoa[0])-vel_z*np.sin(self.el_aoa[0]))/me_d 
+                
+                self.az_aod[0] = np.mod(self.az_aod[0] + tau * S_az_aod,2*np.pi)
+                self.el_aod[0] = np.mod(self.el_aod[0] + tau * S_el_aod,2*np.pi)
+                self.az_aoa[0] = np.mod(self.az_aoa[0] + tau * S_az_aoa,2*np.pi)
+                self.el_aoa[0] = np.mod(self.el_aoa[0] + tau * S_el_aoa,2*np.pi)
+                
+                path_idx_start = 1
+                
+            #Update Delay
+            delays_old = dcp(self.t_ns)
+            # self.t_ns[0] = me_d * 1e9 / 3e8 + self.tau_ns[0] + self.rho[0] 
+            deltaDist = [(vel_x * np.sin(self.el_aoa[ii])*np.cos(self.az_aoa[ii]) + vel_y * np.sin(self.el_aoa[ii])*np.sin(self.az_aoa[ii]) + vel_z * np.cos(self.el_aoa[ii]) ) * tau for ii in range(self.total_num_paths)]
+            for ii in range(self.total_num_paths): self.t_ns[ii] = self.t_ns[ii] + deltaDist[ii-1]/3e8 * 1e9  #In the NYU Sim code this is self.t_ns[ii] - deltaDist[ii-1]/3e8 * 1e9, not sure how they polarity of the sign is incorporated.
+            self.tau_ns, self.rho = self.get_delay_info(self.t_ns, self.Msp)
+
+            #Update Power
+            #Update the time cluster powers (mW) 
+            z_db = self.sigma_Z * np.random.randn()
+            # Pp = np.array([np.exp(-self.tau_ns[nn]/self.Gamma_ns) * 10**(self.sigma_Z * np.random.randn()/10) for nn in range(self.N)]) # (21) in [1]
+            Pp = np.array([np.exp(-self.tau_ns[nn]/self.Gamma_ns) * 10**(z_db/10) for nn in range(self.N)]) # (21) in [1]
+            self.P = Pp/np.sum(Pp) / 10**(self.path_loss_dB/10) # (22) in [1]
+            
+            #Update the cluster sub-path powers (mW)
+            u_db = self.sigma_U * np.random.randn()
+            # Pip = [[np.exp(-self.rho[nn][mm]/self.gamma_ns) * 10**(self.sigma_U * np.random.randn()/10) for mm in range(self.Msp[nn])] for nn in range(self.N) ] # (24) in [1]
+            Pip = [[np.exp(-self.rho[nn][mm]/self.gamma_ns) * 10**(u_db/10) for mm in range(self.Msp[nn])] for nn in range(self.N) ] # (24) in [1]
+            self.Pi = [[Pip[nn][mm] / np.sum(Pip[nn]) * self.P[nn] for mm in range(self.Msp[nn])] for nn in range(self.N)] # (25) in [1]
+            self.rho = np.hstack(self.rho)
+            self.Pi = np.hstack(self.Pi)
+            
+            #Update Phase
+            dt_delay = np.array(self.t_ns)-np.array(delays_old)
+            self.sp_phase = np.mod(self.sp_phase + dt_delay * 2 * np.pi * self.center_frequency_ghz * 1e-3, 2*np.pi)
+            self.sp_phase = np.hstack(self.sp_phase)
+            
+            #Lines 460 through 478 translated from NYU Sim code
+            for i_path in range(path_idx_start,self.total_num_paths):
+                tempBern = xBern[i_path]
+                deltaRS = self.az_aoa[i_path] + (-1)**tempBern * self.az_aod[i_path] + tempBern*np.pi
+                vel_RS_x = np.mod(deltaRS+(-1)**tempBern * vel_x, 2*np.pi)
+                vel_RS_y = np.mod(deltaRS+(-1)**tempBern * vel_y, 2*np.pi)
+                vel_RS_z = 0.0
+                
+                # 0.3 comes from 1e-9 * 3e8
+                S_az_aod = (vel_RS_y * np.cos(self.az_aod[i_path]) - vel_RS_x * np.sin(self.az_aod[i_path]))/np.sin(self.el_aod[i_path])/(self.t_ns[i_path] * 0.3) 
+                S_el_aod = (vel_RS_x * np.cos(self.az_aod[i_path])*np.cos(self.el_aod[0]) + vel_RS_y*np.cos(self.el_aod[i_path])*np.sin(self.az_aod[i_path])-vel_RS_z*np.sin(self.el_aod[i_path]))/(self.t_ns[i_path] * 0.3) 
+                S_az_aoa = (vel_RS_y * np.cos(self.az_aoa[i_path]) - vel_RS_x * np.sin(self.az_aoa[i_path]))/np.sin(self.el_aoa[i_path])/(self.t_ns[i_path] * 0.3)  
+                S_el_aoa = (vel_RS_x * np.cos(self.az_aoa[i_path])*np.cos(self.el_aoa[i_path]) + vel_RS_y*np.cos(self.el_aoa[i_path])*np.sin(self.az_aoa[i_path])-vel_RS_z*np.sin(self.el_aoa[i_path]))/(self.t_ns[i_path] * 0.3)  
+                
+                self.az_aod[i_path] = np.mod(self.az_aod[i_path] + tau * S_az_aod,2*np.pi)
+                self.el_aod[i_path] = np.mod(self.el_aod[i_path] + tau * S_el_aod,2*np.pi)
+                self.az_aoa[i_path] = np.mod(self.az_aoa[i_path] + tau * S_az_aoa,2*np.pi)
+                self.el_aoa[i_path] = np.mod(self.el_aoa[i_path] + tau * S_el_aoa,2*np.pi)
+                    
+        else:
+            #Generate Number of Time Clusters N and AOD/AOA Spatial Lobes (SLs)
+            self.N = np.random.randint(1,7)  # (12) from [1]
+            self.L_AOD = np.min([5, np.max([1,np.random.poisson(self.mu_AOD)])]) # (13) from [1]
+            self.L_AOA = np.min([5, np.max([1,np.random.poisson(self.mu_AOA)])]) # (14) from [1]
+            
+            #Generate the number of cluster sub-paths in each time cluster
+            self.Msp = [np.random.randint(1,31) for nn in range(int(self.N))] # (15) from [1]
+            self.total_num_paths = np.sum(self.Msp)
+            
+            #Generate the path loss for current position, this has dependencies on LOS/NLOS captured by n_bar and the pos_grid[pos_idx].sf
+            self.path_loss_dB = 20* np.log10(4*np.pi*self.center_frequency_ghz * 1e9/3e8) + 10 * self.n_bar * np.log10(me_d) + self.atmospheric_loss_factor_db_m * me_d + self.pos_grid[pos_idx].sf
+            
+            #Generate intracluster sub-path excess delays (ns)
+            inv_BB_bb_ns = 1/400e6 * 1e9
+            x_max_rand = np.random.uniform(0,self.X_max)
+            # self.rho = [[(inv_BB_bb_ns * mm)**(1 + np.random.uniform(0,self.X_max)) for mm in range(self.Msp[nn])] for nn in range(self.N)]
+            self.rho = [[(inv_BB_bb_ns * mm)**(1 + x_max_rand) for mm in range(self.Msp[nn])] for nn in range(self.N)]
+            
+            #Generate cluster excess delays (ns)
+            tau_pp = np.random.exponential(self.mu_tau_ns,self.N) # (18) in [1]
+            Delta_tau = np.sort(tau_pp) - np.min(tau_pp) # (19) in [1]
+            self.tau_ns = [0]
+            for nn in np.arange(self.N-1): self.tau_ns.append(self.tau_ns[nn] + self.rho[nn][-1] + Delta_tau[nn+1] + 25)
+            
+            #Generate the time cluster powers (mW) 
+            z_db = self.sigma_Z * np.random.randn()
+            # Pp = np.array([np.exp(-self.tau_ns[nn]/self.Gamma_ns) * 10**(self.sigma_Z * np.random.randn()/10) for nn in range(self.N)]) # (21) in [1]
+            Pp = np.array([np.exp(-self.tau_ns[nn]/self.Gamma_ns) * 10**(z_db/10) for nn in range(self.N)]) # (21) in [1]
+            self.P = Pp/np.sum(Pp) / 10**(self.path_loss_dB/10) # (22) in [1]
+            
+            #Generate the cluster sub-path powers (mW)
+            u_db = self.sigma_U * np.random.randn()
+            # Pip = [[np.exp(-self.rho[nn][mm]/self.gamma_ns) * 10**(self.sigma_U * np.random.randn()/10) for mm in range(self.Msp[nn])] for nn in range(self.N) ] # (24) in [1]
+            Pip = [[np.exp(-self.rho[nn][mm]/self.gamma_ns) * 10**(u_db/10) for mm in range(self.Msp[nn])] for nn in range(self.N) ] # (24) in [1]
+            self.Pi = [[Pip[nn][mm] / np.sum(Pip[nn]) * self.P[nn] for mm in range(self.Msp[nn])] for nn in range(self.N)] # (25) in [1]
+            self.Pi = np.hstack(self.Pi)
+            
+            #Generate the sub-path phases
+            self.sp_phase = [[np.random.uniform(0,2*np.pi) for mm in range(self.Msp[nn])] for nn in range(self.N)]
+            self.sp_phase = np.hstack(self.sp_phase)
+            
+            #Recover absolute time delays of cluster sub-paths, if LOS, self.tau_ns[0] and self.rho[0][0] should be 0.  Units in ns
+            self.t_ns = [[me_d * 1e9 / 3e8 + self.tau_ns[nn] + self.rho[nn][mm] for mm in range(self.Msp[nn])] for nn in range(self.N)]
+            self.rho = np.hstack(self.rho)
+            self.t_ns = np.hstack(self.t_ns)
+            
+            #Generate mean AOA and AOD azimuth and elevation angles
+            # Angles relative to the BS
+            # The first AOA/AOD corresponds to the spatial position of the ME
+            if self.environment == 'LOS':
+                me_az_degs,me_el_degs = 180/np.pi * me_az, 180/np.pi * me_el
+                self.az_mean_aod_degs = [me_az_degs]
+                self.el_mean_aod_degs = [me_el_degs ]
+                self.az_mean_aoa_degs = [me_az_degs + 180]
+                self.el_mean_aoa_degs = [me_el_degs + 90]
+            elif self.environment == 'NLOS': 
+                self.az_mean_aod_degs = [np.random.uniform(0,360)]
+                self.el_mean_aod_degs = [self.mu_AOD_degs + self.sigma_AOD_degs * np.random.randn()]
+                self.az_mean_aoa_degs= [np.random.uniform(0,360)]
+                self.el_mean_aoa_degs = [self.mu_AOA_degs + self.sigma_AOA_degs * np.random.randn()]
+            
+            for ll in range(1,self.L_AOD): self.az_mean_aod_degs.append(np.random.uniform(360*ll/self.L_AOD,360 * (ll+1)/self.L_AOD))
+            for ll in range(1,self.L_AOD): self.el_mean_aod_degs.append(self.mu_AOD_degs + self.sigma_AOD_degs * np.random.randn())
+            for ll in range(1,self.L_AOA): self.az_mean_aoa_degs.append(np.random.uniform(360*ll/self.L_AOA,360 * (ll+1)/self.L_AOA))
+            for ll in range(1,self.L_AOA): self.el_mean_aoa_degs.append(self.mu_AOA_degs + self.sigma_AOA_degs * np.random.randn())
+            
+            self.az_aod,self.el_aod,self.az_aoa,self.el_aoa = [],[],[],[]
+            self.cluster_lobe_mapping = []
+            for nn in range(self.N):
+                for mm in range(self.Msp[nn]):
+                    if nn == 0 and mm == 0 and self.environment == 'LOS': ii_az,jj_az,ii_el,jj_el = 0,0,0,0
+                    else:
+                        ii_az,ii_el = np.random.randint(self.L_AOD,size = 2)
+                        jj_az,jj_el = np.random.randint(self.L_AOA,size = 2)
+                    self.az_aod.append(np.mod(np.pi/180*(self.az_mean_aod_degs[ii_az] + self.sigma_theta_AOD_degs * np.random.randn()),2*np.pi))
+                    self.el_aod.append(np.mod(np.pi/180*(self.el_mean_aod_degs[ii_el] + self.sigma_phi_AOD_degs * np.random.randn()),2*np.pi))
+                    self.az_aoa.append(np.mod(np.pi/180*(self.az_mean_aoa_degs[jj_az] + self.sigma_theta_AOA_degs * np.random.randn()),2*np.pi))
+                    self.el_aoa.append(np.mod(np.pi/180*(self.el_mean_aoa_degs[jj_el] + self.sigma_phi_AOA_degs * np.random.laplace()),2*np.pi))
+                    self.cluster_lobe_mapping.append([ii_az,ii_el,jj_az,jj_el])
+                    
+        #Build new channel response based on updates
+        self.build_h()
+        
+        #Set memory for next environment check during next fluctuation
+        self.prev_environment = dcp(self.environment)
+
+
+    def update_me(self,tau = 1):
+        """
+        Description
+        ------------
+        Simulates ME motion with a White Gaussian Noise Acceleration model
+        
+        Parameters
+        -----------
+        tau : float
+            Time in seconds during transition
+            
+        """
+        u = self.sigma_u * np.random.randn(2)
+        
+        new_x_pos = self.me_position[0] + self.me_velocity[0] * tau + tau**2/2 * u[0]
+        new_x_vel = self.me_velocity[0] + tau * u[0]
+        new_y_pos = self.me_position[1] + self.me_velocity[1] * tau + tau**2/2 * u[1]
+        new_y_vel = self.me_velocity[1] + tau * u[1]
+        
+        #No variation in z cordinates for now
+        new_z_pos = self.me_position[2]
+        new_z_vel = self.me_velocity[2]
+        
+        self.me_position = (new_x_pos,new_y_pos,new_z_pos)
+        self.me_velocity = (new_x_vel,new_y_vel,new_z_vel)
+        
+    def get_los_map(self, area):
+        """
+        Generate the map of spatially correlated LOS/NLOS condition.
+    
+        Parameters
+        -----------
+        area : int
+            The size of the area (grid size).
+    
+        Returns
+        --------
+        los_map : ndarray 
+            The map of spatially correlated LOS/NLOS condition.
+        """
+    
+        # Generate grid
+        d_px = 1
+        N = int(np.floor(area / d_px + 1))
+        delta = self.d_co / d_px
+        
+        x, y = np.meshgrid(np.linspace(-area/2, area/2, N), np.linspace(-area/2, area/2, N))
+        # x, y = np.meshgrid(np.arange(-2*N,2*N+1), np.arange(-N,N+1))
+        
+        Pr_LOS = np.zeros((N, N))
+    
+        d_2D = np.sqrt(x**2 + y**2) + np.finfo(float).eps
+        d1 = 22
+        d2 = 100
+    
+        # Probability of LOS/NLOS condition (depends on model and scenario)
+        for i in range(N):
+            for j in range(N):
+                if self.scenario == 'UMi':
+                    Pr_LOS[i, j] = (min(d1 / d_2D[i, j], 1) * (1 - np.exp(-d_2D[i, j] / d2)) + 
+                                    np.exp(-d_2D[i, j] / d2))**2
+                elif self.scenario == 'UMa':
+                    if self.h_MS < 13 or self.h_BS <= 18:
+                        C = 0
+                    elif 13 < self.h_MS < 23:
+                        C = ((self.h_MS - 13) / 10)**1.5 * 1.25e-6 * d_2D[i, j]**3 * np.exp(-d_2D[i, j] / 150)
+                    else:
+                        raise ValueError('Height of base station or mobile terminal is out of range.')
+                    Pr_LOS[i, j] = ((min(d1 / d_2D[i, j], 1) * (1 - np.exp(-d_2D[i, j] / d2)) + 
+                                     np.exp(-d_2D[i, j] / d2)) * (1 + C))**2
+                elif self.scenario == 'RMa':
+                    if d_2D[i, j] <= 10:
+                        Pr_LOS[i, j] = 1
+                    elif d_2D[i, j] > 10:
+                        Pr_LOS[i, j] = np.exp(-(d_2D[i, j] - 10) / 1000)
+    
+        # The filter coefficient is considered as 0 when the distance is beyond 4*d_co.
+        M = int(np.floor(8 * delta + 1))
+        if M % 2 == 0:
+            M -= 1
+        h = np.zeros((M, M))
+        init_map = np.random.randn(N + M - 1, N + M - 1)
+    
+        # Generate the filter
+        for i in range(M):
+            for j in range(M):
+                h[i, j] = np.exp(-np.sqrt(((M + 1) / 2 - (i + 1))**2 + ((M + 1) / 2 - (j + 1))**2) / self.d_co)
+    
+        # Apply the filter and generate the correlated map
+        corr_map_pad = convolve2d(init_map, h, mode='same')
+        corr_q = corr_map_pad[(M+1)//2:(M+1)//2+N, (M+1)//2:(M+1)//2+N]
+        corr_k = 0.5 * (1 + erf(corr_q / np.sqrt(2)))
+    
+        los_map = (corr_k < Pr_LOS).astype(int)
+    
+        return los_map
+
+
+    def get_sf_map(self, area):
+        """
+        Obtain the map of spatially correlated shadow fading.
+    
+        Parameters
+        -----------
+        area : int
+            The size of the area (grid size).
+    
+        Returns
+        -------
+        sf_map : ndarray 
+            The map of spatially correlated shadow fading.
+        """
+    
+        # Generate grid
+        N = area + 1
+        d_px = 1
+        delta = self.d_co / d_px
+    
+        # The filter coefficient is considered as 0 when the distance is beyond 4*d_co.
+        M = int(np.floor(8 * delta + 1))
+        h = np.zeros((M, M))
+        init_map = np.random.randn(N + M - 1, N + M - 1)
+    
+        # Generate the filter
+        for i in range(M):
+            for j in range(M):
+                h[i, j] = np.exp(-np.sqrt(((M + 1) / 2 - (i + 1))**2 + ((M + 1) / 2 - (j + 1))**2) / self.d_co)
+    
+        # The mean of the shadow fading
+        mu = 0
+    
+        # Filter the initial map
+        corr_map_pad = convolve2d(init_map, h, mode='same')
+    
+        # Crop the map back to the original size
+        start_idx = int((M + 1) / 2)
+        corr_map = corr_map_pad[start_idx:start_idx + N, start_idx:start_idx + N]
+    
+        # Do normalization
+        # Calculate the actual mean
+        mu0 = np.mean(corr_map)
+        # Calculate the actual variance
+        sigma0 = np.sqrt(np.var(corr_map))
+        
+        # Scale the Correlated Map 
+        if self.center_frequency_ghz == 28:
+            sigma = 3.6
+        elif self.center_frequency_ghz == 72:
+            sigma = 5.2 
+        else:
+            print("Warning: Value not specified as exactly 28 or 73 for 'center_frequency_ghz', Table III does not specify explicit values, taking intermediary for n_bar and sigma.")
+            sigma = 4.4  
+            
+        sf_los_map = corr_map * (sigma / sigma0) + (mu - mu0)
+            
+        if self.center_frequency_ghz == 28:
+            sigma = 9.7  # Path Loss Exponent (PLE) and Standard Deviation for Path Loss
+        elif self.center_frequency_ghz == 73:
+            sigma = 7.6  # Path Loss Exponent (PLE) and Standard Deviation for Path Loss
+        else:
+            print("Warning: Value not specified as exactly 28 or 73 for 'center_frequency_ghz', Table III does not specify explicit values, taking intermediary for n_bar and sigma.")
+            sigma = 8.65  # Path Loss Exponent (PLE) and Standard Deviation for Path Loss
+                
+        sf_nlos_map = corr_map * (sigma / sigma0) + (mu - mu0)
+        
+        return sf_los_map, sf_nlos_map
+
+
+    def get_grid_index(self,x,y,z):
+        """
+        Description
+        -----------
+        Returns index of grid position based on position coordinates (x,y,z).  Used in cross-referencing position
+        with SF map and LOS map.
+        
+        Parameters
+        ----------
+        x : float
+            Position in x-coordinate
+        y : float
+            Position in y-coordinate
+        z : float
+            Position in z-coordinate
+        """
+        return np.argmax([np.sqrt((pos.x-x)**2 + (pos.y-y)**2 + (pos.z-z)**2) for pos in self.pos_grid])
+    
+    def get_d_az_el(self,x,y,z):
+        """
+        Description
+        ------------
+        Translates x,y,z position into spherical coordinates relative to the origin
+
+        Parameters
+        ----------
+        x : float
+            Position in x-coordinate
+        y : float
+            Position in y-coordinate
+        z : float
+            Position in z-coordinate
+
+        Returns
+        -------
+        d : float
+            Distance between origin and x,y,z
+        az : float
+            Azimuth angle
+        el : float
+            Elevation/Zenith angle
+
+        """
+        # Radial distance
+        d = np.sqrt(x**2 + y**2 + z**2)
+        
+        # Azimuthal angle (phi), in the xy-plane
+        az = np.arctan2(y, x)
+        
+        # Polar angle (theta), from the z-axis
+        el = np.arccos(z / d) if d != 0 else 0
+        return d,az,el
+
+
+    def get_delay_info(self, DelayList, nSP):
+        # DelayList is LOS + NLOS, so we calculate excess delay
+        nTC = len(nSP)
+        tau = DelayList - np.min(DelayList)
+    
+        # Compute the cumulative sum of nSP to get indices
+        tmp = [np.sum(nSP[:i+1]) for i in range(nTC)]
+    
+        # Get the first component indices
+        firstComponentIdx = np.array([0] + tmp[:-1]) + 1
+        tau_n = tau[firstComponentIdx - 1]  # Adjust for Python's 0-based indexing
+    
+        # Prepare the structure for rho_mn
+        # rho_mn = {}
+    
+        # Get edge indices
+        edgeIdx = np.append(firstComponentIdx, len(DelayList) + 1)
+    
+        # Compute rho_mn for each component
+        rho_mn = []
+        for cIdx in range(nTC):
+            sp = tau[edgeIdx[cIdx] - 1:edgeIdx[cIdx + 1] - 1]  # Adjust for Python indexing
+            spDelay = sp - np.min(sp)
+            # rho_mn[f'c{cIdx + 1}'] = spDelay
+            rho_mn.append(spDelay)
+        # rho_mn = np.hstack(rho_mn)
+        return tau_n, rho_mn
+
+    def build_h(self):
+        self.ht = 1j * np.zeros(self.M)
+        
+        #Received ULA Channel Response from BS transmission
+        for ii in range(self.total_num_paths):
+            self.ht += np.sqrt(self.Pi[ii]) * np.exp(1j * self.sp_phase[ii]) *  avec(self.az_aod[ii], self.M)
+            
+    class SpatiallyCoherentPosition:
+        """
+        Description
+        -----------
+        Used with the NYU2 channel class to organize the grid of spatially correlated values.
+        
+        Parameters
+        ----------
+        params - dict
+        
+        Notes
+        -----
+        Careful with units, some parameters are derived in dB, but calculations are in mW.
+        """
+        def __init__(self,params):
+            self.index = params['index']
+            self.x = params['x'] #x Position relative to BS
+            self.y = params['y'] #y Position relative to BS
+            self.z = params['z'] #z Position relative to BS
+            self.d = np.sqrt(self.x**2 + self.y**2 + self.z**2) #Distance from BS (at origin) and grid point
+            
+            # self.az = np.atan2(self.y, self.x)
+            self.az = np.arctan2(self.y,self.x)
+            
+            self.el = np.arccos(self.z / self.d) if self.d != 0 else 0
+                    
+            self.los = None
         
 class DynamicMotion(BasicChannel):
     """
@@ -651,6 +1382,8 @@ class DynamicMotion(BasicChannel):
                 Number of signal paths.
             - 'mode': str
                 Mode of the channel ('WGNA', 'FixedV', 'GaussianJumps').
+              'scenario' : str
+                Indicates LOS or NLOS scenario, where the dominant beam is 10 dB higher or 3 dB higher than multipath elements, respectively.
             - 'seed': int
                 Seed for random number generation.
             - 'fading': float
@@ -665,13 +1398,12 @@ class DynamicMotion(BasicChannel):
         self.rho = params['fading']
         self.tau = params['time_step']
         self.L = params['num_paths']
+        if 'scenario' in params: self.scenario = params['scenario']
+        else: self.scenario = 'LOS'
         self.mode = params['mode']
         self.seed = params['seed']
         
-        self.angles = np.concatenate([[self.initial_angle],np.random.uniform(self.initial_angle - .35,self.initial_angle + .35,self.L-1)])
-        self.alphas = randcn(self.L) * np.concatenate([[1.0],.1 * np.ones(self.L-1)])
-        
-        self.ht = np.sum([self.alphas[ii] * avec(self.angles[ii],self.M) for ii in np.arange(self.L)],axis = 0)
+
         
         #State Transition Matrix
         self.F = np.array([ [1, self.tau, 0,        0       ],
@@ -689,26 +1421,44 @@ class DynamicMotion(BasicChannel):
                                 [self.tau,      0, 0],
                                 [0,             1, 0],
                                 [0,             0, 1]])
-            self.x_k = np.array([self.initial_angle,self.sigma_u,np.real(self.alphas[0]),np.imag(self.alphas[0])])
+            self.initial_angular_velocity = dcp(self.sigma_u)
             
         elif self.mode == 'FixedV':
             self.G = np.array([ [0, 0, 0],
                                 [0, 0, 0],
                                 [0, 1, 0],
                                 [0, 0, 1]])
-            self.x_k = np.array([self.initial_angle,self.sigma_u,np.real(self.alphas[0]),np.imag(self.alphas[0])])
+            self.initial_angular_velocity = dcp(self.sigma_u)
             
         elif self.mode == 'GaussianJumps':
             self.G = np.array([ [self.tau, 0, 0],
                                 [0, 0, 0],
                                 [0, 1, 0],
                                 [0, 0, 1]])
-            self.x_k = np.array([self.initial_angle,0.0,np.real(self.alphas[0]),np.imag(self.alphas[0])])
+            self.initial_angular_velocity = 0.0
             
+            
+        self.paths = [DynamicMotion.Path({'initial_angle' : self.initial_angle, 'initial_angular_velocity' : self.initial_angular_velocity, 'scenario' : self.scenario, 'is_dominant_path' : True, 'mode' : self.mode})]
+        for ll in range(self.L-1):
+            self.paths.append(DynamicMotion.Path({'initial_angular_velocity' : self.initial_angular_velocity, 'scenario' : self.scenario, 'is_dominant_path' : False, 'mode' : self.mode}))
+        self.angles = [path.state[0] for path in self.paths]
+        self.alphas = [path.state[2] + 1j * path.state[3] for path in self.paths]
+        # self.angles = np.concatenate([[self.initial_angle],np.random.uniform(self.initial_angle - .35,self.initial_angle + .35,self.L-1)])
+        # if self.scenario == 'LOS':
+        #     self.alphas = randcn(self.L) * np.concatenate([[1.0],.1 * np.ones(self.L-1)])
+        # else:
+        #     self.alphas = randcn(self.L) * np.concatenate([[1.0],.5 * np.ones(self.L-1)])
+        
+        self.log_data = {'angles' : [self.angles],
+                         'alphas' : [self.alphas]}
+        
+        # self.ht = np.sum([self.alphas[ii] * avec(self.angles[ii],self.M) for ii in np.arange(self.L)],axis = 0)
+        self.ht = np.sum([(path.state[2] + 1j * path.state[3]) * avec(path.state[0],self.M) for path in self.paths],axis = 0)
+        
         #Observation Covariance
         self.Qv = self.sigma_v**2/2 * np.eye(2)
     
-    def fluctuation(self, nn, angle_limits = (0,3.141592653589793),*args):
+    def fluctuation(self, nn=0, angle_limits = (0,3.141592653589793),*args):
         """
         Description
         -----------
@@ -751,13 +1501,43 @@ class DynamicMotion(BasicChannel):
             elif x[0] < angle_min: x[0] = x[0] + swath_width
             return x
         
-        u = np.random.multivariate_normal(np.zeros(3),self.Qu)
-        self.x_k = self.F@self.x_k + self.G@u
-        self.x_k = wrap_angle(self.x_k,angle_limits[0],angle_limits[1])
-        self.ht = (self.x_k[2] + 1j * self.x_k[3]) * avec(self.x_k[0],self.M)
-        self.alphas = np.concatenate([[(self.x_k[2] + 1j * self.x_k[3])],randcn(self.L-1) * .1 * np.ones(self.L-1)])
-        self.angles = np.concatenate([[self.x_k[0]],np.random.uniform(self.x_k[0] - .35,self.x_k[0] + .35,self.L-1)])
-        self.ht = np.sum([self.alphas[ii] * avec(self.angles[ii],self.M) for ii in np.arange(self.L)],axis = 0)
+        #Loop through each path and update it accordingly
+        for path in self.paths:
+            u = np.random.multivariate_normal(np.zeros(3),self.Qu)
+            path.state = self.F@path.state + self.G@u
+            if path.is_dominant_path: path.state = wrap_angle(path.state, angle_limits[0],angle_limits[1])
+        self.angles = [path.state[0] for path in self.paths]
+        self.alphas = [path.state[2] + 1j * path.state[3] for path in self.paths]
+        self.ht = np.sum([(path.state[2] + 1j * path.state[3]) * avec(path.state[0],self.M) for path in self.paths],axis = 0)
+        # self.x_k = self.F@self.x_k + self.G@u
+        # self.x_k = wrap_angle(self.x_k,angle_limits[0],angle_limits[1])
+        # self.ht = (self.x_k[2] + 1j * self.x_k[3]) * avec(self.x_k[0],self.M)
+        # if self.scenario == 'LOS':
+        #     self.alphas = np.concatenate([[(self.x_k[2] + 1j * self.x_k[3])],randcn(self.L-1) * .1 * np.ones(self.L-1)])
+        # else:
+        #     self.alphas = np.concatenate([[(self.x_k[2] + 1j * self.x_k[3])],randcn(self.L-1) * .5 * np.ones(self.L-1)])
+        # if self.sigma_u > 0:
+        #     self.angles = np.concatenate([[self.x_k[0]],np.random.uniform(self.x_k[0] - .35,self.x_k[0] + .35,self.L-1)])
+        # self.ht = np.sum([self.alphas[ii] * avec(self.angles[ii],self.M) for ii in np.arange(self.L)],axis = 0)
         
+        self.log_data['angles'].append(self.angles)
+        self.log_data['alphas'].append(self.alphas)
 
-
+    class Path:
+        def __init__(self,params):
+            self.is_dominant_path = params['is_dominant_path']
+            if params['is_dominant_path']:
+                self.initial_angle = params['initial_angle']
+                self.initial_alpha = randcn(1)
+            else:
+                self.initial_angle = np.random.uniform(0,2*np.pi)
+                if params['scenario'] == 'LOS':
+                    self.initial_alpha = .1 * randcn(1)
+                elif params['scenario'] == 'NLOS':
+                    self.initial_alpha = .5 * randcn(1)
+            
+            self.initial_angular_velocity = params['initial_angular_velocity']
+        
+            self.state = np.array([self.initial_angle, self.initial_angular_velocity, np.real(self.initial_alpha), np.imag(self.initial_alpha)])
+        
+            

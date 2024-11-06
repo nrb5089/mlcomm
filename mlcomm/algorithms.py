@@ -32,9 +32,9 @@ import pickle
 import matplotlib.pyplot as plt
 from scipy.stats import truncnorm
 from scipy.special import erf
-from mlcomm.codebooks import *
-from mlcomm.channels import *
-from mlcomm.util import *
+from codebooks import *
+from channels import *
+from util import *
 
 class AlgorithmTemplate:
     """
@@ -95,7 +95,8 @@ class AlgorithmTemplate:
         self.log_data = {'relative_spectral_efficiency' : [], 
                          'path' : [],
                          'samples' : [],
-                         'flops' : []
+                         'flops' : [],
+                         'runtime' : []
                          }
         #print(self.best_midx)
         
@@ -108,7 +109,7 @@ class AlgorithmTemplate:
         self.best_midx = np.argmax([self.sample(node,with_noise=False) for node in self.cb_graph.nodes.values()])
         self.best_node = self.cb_graph.nodes[self.best_midx]
         
-    def sample(self, node, transmit_power_dbw = 1, with_noise=True, mode='rss'): 
+    def sample(self, node, transmit_power_dbm = 1, with_noise=True, mode='rss'): 
         """
         Description
         ------------
@@ -122,7 +123,7 @@ class AlgorithmTemplate:
         ----------
         node : object
             The node to be sampled.
-        transmit_power_dbw : float
+        transmit_power_dbm : float
             Transmit power over the channel in dbw, not required for BasicChannel
         with_noise : bool, optional
             A flag to indicate whether noise should be included in the sample 
@@ -137,7 +138,7 @@ class AlgorithmTemplate:
         """
         assert mode == 'complex' or mode == 'rss', 'Parameter Selection Error: Valid entries for parameter "mode" are "complex" and "rss" (default)'
         if mode == 'rss':
-            return np.abs(np.conj(node.f).T @ self.channel.array_response(transmit_power_dbw = transmit_power_dbw,with_noise=with_noise))**2
+            return np.abs(np.conj(node.f).T @ self.channel.array_response(transmit_power_dbm = transmit_power_dbm,with_noise=with_noise))**2
         elif mode == 'complex':
             return np.conj(node.f).T @ self.channel.array_response(with_noise=with_noise)
         
@@ -293,6 +294,7 @@ class HOSUB(AlgorithmTemplate):
             #Sample node and update statistics
             self.update_node(node_to_sample,self.sample(node_to_sample))
             self.channel.fluctuation(nn)
+            self.set_best()
             
             nn += 1
             
@@ -386,35 +388,38 @@ class DBZ(AlgorithmTemplate):
         self.a = params['a']
         self.b = params['b']
         self.c = params['c']
-    
+        if 'transmit_power_dbm' in params: self.transmit_power_dbm = params['transmit_power_dbm']
+        else: self.transmit_power_dbm = 0
+        
         assert self.p[self.cb_graph.H-1] == 1, "Error: Last value of 'levels_to_play' (self.p) must be 1."
+        
         #Terms for the statistics are time-varying, hence must be calculated live as node methods
-        def exploration(self,nn): 
-            nn = np.min([float(nn),self.W])
+        # def exploration(self,nn): 
+        #     nn = np.min([float(nn),self.W])
             
-            return np.log(15.0*self.NH * (np.min([nn,self.W]))**4.0/4.0/self.delta)
+        #     return np.log(15.0*self.NH * (np.min([nn,self.W]))**4.0/4.0/self.delta)
             
-        def confidence_term(self,nn): 
-            num_pulls = len(np.where(np.array(self.sample_history) != 0)[0])
-            if num_pulls < 2: 
-                return np.inf
-            else:
-                empirical_variance = np.sum(np.array(self.sample_history)**2)/num_pulls - np.sum(self.sample_history)**2/num_pulls**2
-                return np.sqrt(4 * self.b * empirical_variance * self.exploration(nn) / num_pulls) + 2 * np.sqrt(2 * self.b * self.c) * self.exploration(nn) / (num_pulls-1) 
+        # def confidence_term(self,nn): 
+        #     num_pulls = len(np.where(np.array(self.sample_history) != 0)[0])
+        #     if num_pulls < 2: 
+        #         return np.inf
+        #     else:
+        #         empirical_variance = np.sum(np.array(self.sample_history)**2)/num_pulls - np.sum(self.sample_history)**2/num_pulls**2
+        #         return np.sqrt(4 * self.b * empirical_variance * self.exploration(nn) / num_pulls) + 2 * np.sqrt(2 * self.b * self.c) * self.exploration(nn) / (num_pulls-1) 
         
-        def ucb(self,nn): 
-            num_pulls = len(np.where(np.array(self.sample_history) != 0)[0])
-            if num_pulls < 2: 
-                return np.inf
-            else:
-                return 1/num_pulls * np.sum(self.sample_history) + self.confidence_term(nn)
+        # def ucb(self,nn): 
+        #     num_pulls = len(np.where(np.array(self.sample_history) != 0)[0])
+        #     if num_pulls < 2: 
+        #         return np.inf
+        #     else:
+        #         return 1/num_pulls * np.sum(self.sample_history) + self.confidence_term(nn)
         
-        def lcb(self,nn): 
-            num_pulls = len(np.where(np.array(self.sample_history) != 0)[0])
-            if num_pulls < 2: 
-                return -np.inf
-            else:
-                return 1/num_pulls * np.sum(self.sample_history)  - self.confidence_term(nn)
+        # def lcb(self,nn): 
+        #     num_pulls = len(np.where(np.array(self.sample_history) != 0)[0])
+        #     if num_pulls < 2: 
+        #         return -np.inf
+        #     else:
+        #         return 1/num_pulls * np.sum(self.sample_history)  - self.confidence_term(nn)
         
         #Initialize node attributes and method for bandit algorithm
         for node in self.cb_graph.nodes.values():
@@ -424,10 +429,10 @@ class DBZ(AlgorithmTemplate):
             node.c = self.c
             node.W = self.W[node.h]
             node.NH = float(len(self.cb_graph.level_midxs[0]) + 3 * (self.cb_graph.H-1))  #Total number of beams, note that this is hard-coded for our purposes
-            node.exploration = types.MethodType(exploration,node)
-            node.confidence_term = types.MethodType(confidence_term,node)
-            node.ucb = types.MethodType(ucb,node)
-            node.lcb = types.MethodType(lcb,node)
+            # node.exploration = types.MethodType(exploration,node)
+            # node.confidence_term = types.MethodType(confidence_term,node)
+            # node.ucb = types.MethodType(ucb,node)
+            # node.lcb = types.MethodType(lcb,node)
     
     def run_alg(self,time_horizon):
         if self.mode == 'stationary': time_horizon = 10000000 #Hard stop algorithm time ceiling
@@ -439,11 +444,13 @@ class DBZ(AlgorithmTemplate):
         thresholds = [-np.inf]
         self.comm_node = None
         gamma_midx,u_midx,nn = self.initialize(0.0,current_midxs)
+        
         Zmax = False
         while nn < time_horizon:
-            #print(f'{nn} : {current_midxs}')
+            nn_flops = 0.0
             if not Zmax: G = nodes[u_midx].ucb(nn-1) - nodes[gamma_midx].lcb(nn-1)
             else: G = np.inf
+            nn_flops += 2*(2*nodes[gamma_midx].W + 13) + 1
             epsh = self.epsilon * self.cb_graph.g**(-(H-nodes[current_midxs[0]].h-1))
             #print(f'{nn} - G: {G}, epsh : {epsh}')
             
@@ -461,10 +468,11 @@ class DBZ(AlgorithmTemplate):
                     if self.mode == 'stationary': 
                         self.log_data['path'].append(gamma_midx)
                         self.log_data['samples'] = [nn]
+                        self.log_data['relative_spectral_efficiency'].append(self.calculate_relative_spectral_efficiency(self.comm_node))
                         return gamma_midx,nn
                 else:
                     gamma_midx,u_midx = self.get_gamma_u(nn, current_midxs)
-                    # gamma_midx,u_midx,nn = self.initialize(nn,current_midxs)
+                    gamma_midx,u_midx,nn = self.initialize(nn,current_midxs)
                     
             # Case for Zooming Out
             elif np.any(nodes[gamma_midx].ucb(nn-1) < np.array(thresholds)):
@@ -506,6 +514,10 @@ class DBZ(AlgorithmTemplate):
             corresponds to the largest LCB 
         u_midx : int
             corresponds to the largest UCB that is not gamma_midx, determined with method 'get_gamma_u'
+            
+        Notes
+        -----
+        Requires 2*(2*nodes[u_midx].W + 11) + 1 to compute the confidence term and 2*self.cb_graph.M +1 from ``perform_sample_update_channel``
         """
         nodes = self.cb_graph.nodes
         if u_midx == None:
@@ -563,6 +575,9 @@ class DBZ(AlgorithmTemplate):
         current_midxs : list or array 
             midxs corresponding to cb_graph object attribute in which the bandit game will play those nodes
         
+        Notes
+        -----
+        
         """
         nodes = self.cb_graph.nodes
         #LUCB arm sample selection process
@@ -592,6 +607,10 @@ class DBZ(AlgorithmTemplate):
         Returns
         -------
         None
+        
+        Notes
+        -----
+        Simulated buffered memory, not consuming flops
         """
         
         #Update Node that was just sampled
@@ -613,16 +632,22 @@ class DBZ(AlgorithmTemplate):
         Description
         -----------
         Wrapper function to perform operations necessary during sampling.
+        
+        Notes
+        -----
+        Requires 2* self.cb_graph.M +1 flops for the inner product and absolute value squared.
         """
-        self.update_node(node_to_sample,self.sample(node_to_sample))
-        self.channel.fluctuation(nn,(self.cb_graph.min_max_angles[0],self.cb_graph.min_max_angles[1]))
+        self.update_node(node_to_sample,self.sample(node_to_sample,transmit_power_dbm=self.transmit_power_dbm))
+        
         if self.comm_node == None:
             self.log_data['relative_spectral_efficiency'].append(0.0)
             self.log_data['path'].append(np.nan)
         else:
-            self.set_best()
+            # self.set_best()
             self.log_data['relative_spectral_efficiency'].append(self.calculate_relative_spectral_efficiency(self.comm_node))
             self.log_data['path'].append(self.comm_node.midx)
+        self.channel.fluctuation(nn,(self.cb_graph.min_max_angles[0],self.cb_graph.min_max_angles[1]))
+        self.set_best()
 
 
 ## Bayesian Algorithms
@@ -658,7 +683,7 @@ class HPM(AlgorithmTemplate):
 
         Parameters
         ----------
-        params (dict)
+        params : dict
             A dictionary containing the initialization parameters.
                 - 'time_horizon'
                     Maximum number of samples before terminating algorithm.  Only used in 'FL' mode
@@ -747,7 +772,7 @@ class HPM(AlgorithmTemplate):
         M = self.cb_graph.M
         posteriors = np.ones(N)/N  #Establish priors
         VL = True
-        nn = 0
+        nn = 1
         current_node = nodes[0]
         while True:
             nn_flops = 0.0
@@ -792,29 +817,35 @@ class HPM(AlgorithmTemplate):
              
             z = q_func(self.sample(current_node,mode = 'complex'))
             nn_flops += 2*self.cb_graph.M -1
-            
+            # if nn > 2000:
+            #     print('pause')
             if self.fading_estimation == 'exact':
                 alpha_hats = self.channel.alphas
             elif self.fading_estimation == 'estimate':
                 alpha_hats = self.channel.alphas + .25/2 * randcn(self.channel.L)
             elif self.fading_estimation == 'unitary':
-                self.alpha_hats = np.ones(self.channel.L)
+                alpha_hats = np.ones(self.channel.L)
             
             athetai = np.array([avec(angle,self.cb_graph.M) @ np.conj(current_node.f) for angle in np.array([self.cb_graph.nodes[midx].steered_angle for midx in self.cb_graph.level_midxs[-1]])])
+            nn_flops += 2 * self.cb_graph.M * N
+            
             mus = np.sum([alpha_hats[ll] *  athetai for ll in np.arange(self.channel.L)],axis = 0)
-            if self.channel.sigma_v <= .1: sigma_v_temp = .1
+            nn_flops += self.channel.L
+            
+            if self.channel.sigma_v <= .05: sigma_v_temp = .05
             else: sigma_v_temp = dcp(self.channel.sigma_v)
             pdfs =  1/(np.pi * sigma_v_temp**2) * np.exp(-np.abs(z-mus)**2/(sigma_v_temp**2))
             
-            nn_flops += 2 * self.cb_graph.M * N
+            nn_flops += 5*N
 
             sum_vec = np.sum(posteriors*pdfs) + 1e-30
             # sum_vec = np.sum(posteriors*pdfs)
-            posteriors = posteriors*pdfs / (sum_vec)
+            posteriors = posteriors*pdfs / (sum_vec) + 1e-30
             nn_flops += 4*N-1
 
             posteriors = 1/np.sum(posteriors) * posteriors #only for normalizing, not explicitly written in algorithm
 
+        
             #Estimated best at this iteration
             est_best_midx = self.cb_graph.level_midxs[-1][np.argmax(posteriors)]
             
@@ -823,11 +854,14 @@ class HPM(AlgorithmTemplate):
             self.log_data['relative_spectral_efficiency'].append(self.calculate_relative_spectral_efficiency(nodes[est_best_midx]))
             self.log_data['samples'] = [nn]
             
-            nn +=1
-            self.channel.fluctuation(nn)
+            if (self.mode == 'VL' and np.max(posteriors) > 1- self.delta):  return
+            elif (self.mode == 'FL' and nn == self.time_horizon): return 
+            else:
+                nn +=1
+                self.channel.fluctuation(nn,angle_limits = self.cb_graph.min_max_angles)
+                self.set_best()
             
-            if (self.mode == 'VL' and np.max(posteriors) > 1- self.delta):  break
-            elif (self.mode == 'FL' and nn == self.time_horizon): break
+            
         
             
 
@@ -927,6 +961,7 @@ class ABT(AlgorithmTemplate):
         
         def unif_mean_normal_pdf(x,sigma,a,b): 
         	''' In my setting, a and b are the coverage limits of the beam'''
+            #7 flops to compute per each element of x, assume fast integral LUT
         	return  (erf((x-a)/np.sqrt(2)/sigma) - erf((x-b)/np.sqrt(2)/sigma))/2/(b-a)
         
         nodes = self.cb_graph.nodes #Shorthand for nodes
@@ -934,6 +969,7 @@ class ABT(AlgorithmTemplate):
         N = len(self.cb_graph.level_midxs[-1]) # Number of steered angle positions for the beamforming codebook
         M = self.cb_graph.M
         posteriors = np.ones(N)/N  #Establish priors
+        pim1 = np.ones(N)/N
         VL = True
         nn = 0
         current_node = nodes[0]
@@ -989,32 +1025,40 @@ class ABT(AlgorithmTemplate):
                 self.alpha_hats = np.ones(self.channel.L)
             
             athetai = np.array([avec(angle,self.cb_graph.M) @ np.conj(current_node.f) for angle in np.array([self.cb_graph.nodes[midx].steered_angle for midx in self.cb_graph.level_midxs[-1]])])
+            nn_flops += 2 * self.cb_graph.M * N
+            
             mus = np.sum([alpha_hats[ll] *  athetai for ll in np.arange(self.channel.L)],axis = 0)
-            if self.channel.sigma_v <= .1: sigma_v_temp = .1
+            nn_flops += self.channel.L
+            
+            if self.channel.sigma_v <= .05: sigma_v_temp = .05
+            else: sigma_v_temp = dcp(self.channel.sigma_v)
             pdfs =  1/(np.pi * sigma_v_temp**2) * np.exp(-np.abs(z-mus)**2/(sigma_v_temp**2))
             
-            nn_flops += 2 * self.cb_graph.M * N
+            nn_flops += 5*N
 
-            sum_vec = np.sum(posteriors*pdfs) + 1e-30
-            posteriors = posteriors*pdfs / (sum_vec) + 1e-30
-            nn_flops += 4*self.channel.M -1
+            sum_vec = np.sum(pim1*pdfs) + 1e-30
+            posteriors = pim1*pdfs / (sum_vec) + 1e-30
+            nn_flops += 4*N -1
 
             posteriors = 1/np.sum(posteriors) * posteriors #only for normalizing, not explicitly written in algorithm
-
-            #Estimated best at this iteration
             est_best_midx = self.cb_graph.level_midxs[-1][np.argmax(posteriors)]
             
-            
-            #TODO: Note that these only work for tau = 1 at the moment.
+            #Update posteriors for next timestep based on the motion, perfectly known to agent.
             if self.channel.mode == 'WGNA':
+                
+                #12 flops to computer sigma_nnu2
                 sigma_nnu2 = self.channel.tau**4/4 * self.channel.sigma_u**2 * (4*nn**3/3 - 4*nn**2 + 11*nn/3 -1) + self.channel.tau**2*(nn-1)**2*self.channel.sigma_u**2
+                
                 if np.sign(sigma_nnu2) == -1: sigma_nnu2 = 1e-32
                 sigma_nnu = np.sqrt(sigma_nnu2)
+                
+                nn_flops += 13.0
                 
                 pdf_u = []
                 for midx in self.cb_graph.level_midxs[current_node.h]:
                     pdf_u_beam = unif_mean_normal_pdf(nodes[midx].steered_angle, sigma_nnu, nodes[midx].steered_angle - self.cb_graph.beamwidths[current_node.h]/2, nodes[midx].steered_angle + self.cb_graph.beamwidths[current_node.h]/2)
                     pdf_u.append(pdf_u_beam)
+                    nn_flops += 7.0
                 pdf_u = np.repeat(pdf_u,int(2**(H-current_node.h-1))) + 1e-30
                 pdf_u = 1/np.sum(pdf_u) * pdf_u
                 pim1 = posteriors * pdf_u + 1e-30
@@ -1038,10 +1082,11 @@ class ABT(AlgorithmTemplate):
                     pdf_phi = pdf_phi/np.sum(pdf_phi)
                     pim1.append( posteriors @ pdf_phi + 1e-30)
                     
-                    
+            pim1 = pim1/np.sum(pim1)
             #posteriors = np.array(pim1)/np.sum(pim1)
-            nn_flops += 3 * N
-
+            
+            #Estimated best at this iteration
+            
             self.log_data['path'].append(est_best_midx)
             self.log_data['flops'].append(nn_flops)
             self.log_data['relative_spectral_efficiency'].append(self.calculate_relative_spectral_efficiency(nodes[est_best_midx]))
@@ -1101,10 +1146,16 @@ class TASD(AlgorithmTemplate):
                 Confidence parameter for upper confidence bound calculations.
               'epsilon' : float
                 Tolerance paramter in which rewards are epsilon-optimal if mu + epsilon>= mu_max
+              'transmit_power_dbm' : float (optional)
+                Transmit power in dBW, defaults to 0 (1 Watt in linear units)
         """
         super().__init__(params)
         self.delta = params['delta']
         self.epsilon = params['epsilon']
+        if 'transmit_power_dbm' in params: self.transmit_power_dbm = params['transmit_power_dbm']
+        else: self.transmit_power_dbm = 0
+        if 'mode' in params: self.mode = params['mode']
+        else: self.mode = 'stationary'
         
         #Initialize node attributes and method for bandit algorithm
         for node in self.cb_graph.nodes.values():
@@ -1114,7 +1165,7 @@ class TASD(AlgorithmTemplate):
         
         self.set_best()
         
-    def run_base_alg(self, current_midxs = None,update_logs = True):
+    def run_base_alg(self, current_midxs = None,time_horizon = 100000,update_logs = True, verbose = False):
         """
         Description
         -----------
@@ -1167,8 +1218,12 @@ class TASD(AlgorithmTemplate):
         def rate(t,delta): return np.log((np.log(t) + 1)/delta)
         
         def d(mu1, mu2):
-            if mu1 < 0 or mu2 < 0: print('Empirical value mu2-eps < 0, invalid value, need smaller epsilon')
+            if mu2 < 0: 
+                #print('Empirical value mu2-eps < 0, invalid value, need smaller epsilon')
+                #mu2 = 1e-32
+                return np.inf
             myd = 1/2 * np.log(mu2/mu1) + mu1/2/mu2 + (mu1 - mu2)**2 / 4 / mu2 / self.channel.sigma_v**2 - 1/2
+            #myd = 
             return myd
 
         # Define the right lambdaX (minimizer) function depending on epsilon and on the distributions
@@ -1183,7 +1238,7 @@ class TASD(AlgorithmTemplate):
             else:
                 #func(lambda)=(lambda-mua)/variance(lambda)+x*(lambda+epsilon-mub)/variance(lambda+epsilon)
                 # def func(lam)=(lam-mua)*variance(lam+epsilon)+x*(lam+epsilon-mub)*variance(lam)
-                def func(lam): return d(mua,lam)  + x * d(mub,lam + epsilon) #From (6.3)
+                def func(lam): return d(mua,lam)  + x * d(mub,lam + epsilon) #From (5.3) (Might have been (5.3) in earlier version of paper)
                 return dicoSolve(func, np.max([mub-epsilon,pre]),mua,pre) #Again, assumes that muminus and muplus are -inf and +inf 
 
         def gb(x,mua,mub,epsilon,pre=1e-12):
@@ -1248,11 +1303,16 @@ class TASD(AlgorithmTemplate):
             # cannot work in the Bernoulli case if mua=1 and there is another arm with mub=1
             K=len(mu)
             yMin,yMax=AdmissibleAux(mu,a,epsilon)
+            
+            #This got stuck in an infinite loop whenever yMax==np.inf, tried to manually constrain the range of values.
+            #Trying to compute fun(100000) always got hung up too.
             def fun(y): return auxEps(y,mu,a,epsilon,pre)
             if yMax==np.inf:
-                yMax=1
-                while fun(yMax)<0:
-                    yMax=yMax*2
+                # yMax=1
+                # while fun(yMax)<0:
+                #     yMax=yMax*2
+                yMax = 10000
+            # yMax = 2.0
             ystar = dicoSolve(fun, yMin, yMax, pre)
             x = np.zeros(K)
             for k in np.arange(K):
@@ -1316,7 +1376,8 @@ class TASD(AlgorithmTemplate):
         nn = 0
         #Sample each starting level beamforming vector once
         for midx in current_midxs:
-            self.update_node(nodes[midx],self.sample(nodes[midx]),current_midxs)
+            self.update_node(nodes[midx],self.sample(nodes[midx],transmit_power_dbm = self.transmit_power_dbm),current_midxs)
+            
             nn += 1
         empirical_mean_rewards = [nodes[midx].empirical_mean_reward for midx in current_midxs]
         num_pulls = [nodes[midx].num_pulls for midx in current_midxs]
@@ -1331,19 +1392,20 @@ class TASD(AlgorithmTemplate):
             # Compute the stopping statistic
             Score,est_best_midx=PGLRT(empirical_mean_rewards,num_pulls,self.epsilon,Is,K)
             #if params['verbose']:
-            #print(f'{nn} Score {Score}, rate {rate(nn,self.delta)}\n')
+            #print(f'n = {nn}, Score {Score}, rate {rate(nn,self.delta)}\n')
     
             #Check to see if stopping criteria is met, if so, break loop
-            if (Score > rate(nn,self.delta)):
-                if nn == K: print('Info: Algorithm stopped after initial beam sweep.')
+            if self.mode == 'non-stationary': nn_count = np.min([nn,nodes[0].W])
+            else: nn_count = dcp(nn)
+            if (Score > rate(nn_count,self.delta)):
+                if nn == K and verbose: print('Info: Algorithm stopped after initial beam sweep.')
                 break
             
             #Check to see if the algorithm is hung up, if so, break loop
-            elif (nn >10000000):
-                print(empirical_mean_rewards)
-                print(num_pulls)
+            elif (nn >time_horizon):
+                est_best_midx = current_midxs[np.argmax(empirical_mean_rewards)]
                 print(f'Info: Stopped after {nn} samples, algorithm reached max time horizon.')
-                break
+                return est_best_midx, nn
             
             #If the algorithm meets neither of the stopping criteria, continue sampling
             else:
@@ -1358,11 +1420,12 @@ class TASD(AlgorithmTemplate):
             midx_to_sample = current_midxs[index_to_sample]
             
             # Draw the arm and update rewards
-            self.update_node(nodes[midx_to_sample],self.sample(nodes[midx_to_sample]),current_midxs)
+            self.update_node(nodes[midx_to_sample],self.sample(nodes[midx_to_sample],transmit_power_dbm = self.transmit_power_dbm),current_midxs)
             empirical_mean_rewards = [nodes[midx].empirical_mean_reward for midx in current_midxs]
             num_pulls = [nodes[midx].num_pulls for midx in current_midxs]
             nn+=1
             self.channel.fluctuation(nn,self.cb_graph.min_max_angles)
+            self.set_best()
             
         est_best_midx = current_midxs[np.argmax(empirical_mean_rewards)]
         if update_logs:
@@ -1459,7 +1522,8 @@ class NPHTS(TASD):
                 A list of delta values for each level.
             - epsilon: float
                 The epsilon value for the algorithm.
-
+            - transmit_power_dbm : float (optional)
+                Transmit power in dBW, defaults to 0 (1 Watt in linear units)
         Raises
         ------
         AssertionError
@@ -1473,6 +1537,9 @@ class NPHTS(TASD):
         
         assert len(self.p) == len(self.delta), "Error: The number of deltas provided must match the number of levels played, the number of 1s in 'levels_to_play'."
         assert self.p[-1] == 1, "Last element of 'levels_to_play' must be 1."
+        
+        if 'transmit_power_dbm' in params: self.transmit_power_dbm = params['transmit_power_dbm']
+        else: self.transmit_power_dbm = 0
         
     def run_alg(self):
         """
@@ -1492,15 +1559,20 @@ class NPHTS(TASD):
         """
         nn = 0
         nodes = self.cb_graph.nodes
-        current_midxs = self.cb_graph.level_midxs[0]
+        current_midxs = self.cb_graph.base_midxs[0]
         for hh in np.arange(self.cb_graph.H):  #Breaks when there is only a singles node from the zoom in midxs
             self.delta = self.deltas[hh]
             if self.p[hh] == 0:
                 current_midxs = np.hstack([nodes[midx].zoom_in_midxs for midx in current_midxs])
             else:
                 #tas_instance_h = TASD({'cb_graph' : self.cb_graph, 'channel' : self.channel, 'delta' : self.deltas[hh], 'epsilon' : self.epsilon})
-                recommendation_midx,num_samples = self.run_base_alg(current_midxs)
+                recommendation_midx,num_samples = self.run_base_alg(current_midxs,update_logs = True)
                 
+                #TODO: Need to add logic to handle breaks due to hitting time horizon.
+                
+                # self.log_data['relative_spectral_efficiency'].append(self.calculate_relative_spectral_efficiency(nodes[recommendation_midx]))
+                # self.log_data['path'].append(recommendation_midx)
+                # self.log_data['samples'].append(num_samples)
                 #Include the best sibling of recommended beam
                 if recommendation_midx == nodes[recommendation_midx].post_sibling:
                     recommendation_midxs = [nodes[recommendation_midx].prior_sibling, recommendation_midx]
@@ -1514,5 +1586,224 @@ class NPHTS(TASD):
                         
                 current_midxs = np.hstack([nodes[midx].zoom_in_midxs for midx in recommendation_midxs])
                 nn += num_samples
+        self.log_data['samples'] = [np.sum(self.log_data['samples'])]
+        return
+                
+class MotionTS(TASD):
+    """
+    Description
+    -----------
+    Phased Track and Stop Beamforming approach from where only recent samples are considered.  In the case that an empirical mean chosen is less than any previous
+    level's, zoom out.
+
+    Parameters
+    ----------
+    params : dict
+        A dictionary of parameters for initializing the NPHTS algorithm. 
+        Must include 'levels_to_play', 'delta', and 'epsilon'.
+
+        - levels_to_play: List[int]
+            A list indicating the levels to be played in the algorithm.
+        - delta: List[float]
+            A list of delta values for each level.
+        - epsilon: float
+            The epsilon value for the algorithm.
+
+    Raises
+    ------
+    AssertionError
+        If the length of 'levels_to_play' does not match the length of 'delta'.
+        If the last element of 'levels_to_play' is not 1.
+        
+    Methods
+    -------
+    __init__(self, params):
+        Initializes the NPHTS algorithm with the provided parameters.
+
+    run_alg(self):
+        Runs the NPHTS algorithm to find the best beamforming vector.
+
+    Notes
+    -----
+    Relies on the TASD class for the update_node method.
+    
+    Slightly modified from the implementation in [3] which has a fixed two-phase approach, whereas here we
+    allow the user to select which levels to play by the key in params 'levels_to_play'.
+
+    """
+    def __init__(self,params):
+        """
+        Description
+        -----------
+        Initializes the algorithm with the provided parameters.
+
+        Parameters
+        ----------
+        params : dict
+            A dictionary of parameters for initializing the NPHTS algorithm. 
+            Must include 'levels_to_play', 'delta', and 'epsilon'.
+
+            - levels_to_play: List[int]
+                A list indicating the levels to be played in the algorithm.
+            - delta: List[float]
+                A list of delta values for each level.
+            - sample_window_lengths : list[int]
+                length of each sample window at level h
+            - epsilon: float
+                The epsilon value for the algorithm.
+            - mode : str
+            - transmit_power_dbm : float (optional)
+                Transmit power in dBW, defaults to 0 (1 Watt in linear units)
+
+        Raises
+        ------
+        AssertionError
+            If the length of 'levels_to_play' does not match the length of 'delta'.
+            If the last element of 'levels_to_play' is not 1.
+        """
+        super().__init__(params)
+        #self.p = params['levels_to_play']
+        self.deltas = params['delta']
+        self.W = params['sample_window_lengths']
+        self.epsilon = params['epsilon']
+        self.mode = params['mode']
+        if 'transmit_power_dbm' in params: self.transmit_power_dbm = params['transmit_power_dbm']
+        else: self.transmit_power_dbm = 0
+        if 'scale_reward' in params: self.scale_reward = params['scale_reward']
+        else: self.scale_reward = False
+        #assert len(self.p) == len(self.delta), "Error: The number of deltas provided must match the number of levels played, the number of 1s in 'levels_to_play'."
+        #assert self.p[-1] == 1, "Last element of 'levels_to_play' must be 1."
+        
+        #Initialize node attributes and method for bandit algorithm
+        for node in self.cb_graph.nodes.values():
+            node.sample_history = []
+            node.W = self.W[node.h]
+            
+    def run_alg(self,time_horizon):
+        """
+        Description
+        -----------
+        Runs the algorithm to find the best beamforming vector.
+        
+        This method implements the core logic of the NPHTS algorithm, leveraging 
+        the parameters initialized in the __init__ method.
+        
+        Parameters
+        ----------
+        time_horizon : int
+            Number of time steps to run the simulation
+        
+        Returns
+        -------
+        int
+            The midx corresponding to the estimated best beamforming vector as indexed by the codebook graph.
+        int
+            The number of samples prior to terminating
+        """
+        nn = 0
+        nodes = self.cb_graph.nodes
+        self.comm_node = None
+        current_midxs = self.cb_graph.base_midxs[0]
+        for midx in current_midxs:
+            self.update_node(nodes[midx],self.sample(nodes[midx],transmit_power_dbm=self.transmit_power_dbm),current_midxs)
+            nn += 1
+        previous_empirical_mean_rewards = [-np.inf] #impossible to zoom out at level h = 0
+        while nn < time_horizon:
+            self.delta = self.deltas[nodes[current_midxs[0]].h]
+            
+            if len(current_midxs) > 1:
+                #print(nn)
+                recommendation_midx,num_samples = self.run_base_alg(current_midxs,time_horizon = time_horizon,update_logs = False)
+                nn += num_samples
+                #Zoom out if any of the previous empirical mean rewards are greater than the one most recently obtained
+                if np.any(nodes[recommendation_midx].empirical_mean_reward < np.array(previous_empirical_mean_rewards)):
+                    
+                    self.comm_node = nodes[self.comm_node.zoom_out_midx]
+                    current_midxs = dcp(self.comm_node.zoom_in_midxs)
+                    
+                    previous_empirical_mean_rewards.pop(-1)
+                    
+                #Zoom in otherwise, and make the new set of current midxs the zoom-in indices of the chosen beam
+                else:
+                    self.comm_node = nodes[recommendation_midx]
+                    current_midxs = dcp(self.comm_node.zoom_in_midxs)
+                    previous_empirical_mean_rewards.append(self.comm_node.empirical_mean_reward)
+                
+                #Initialize new set of nodes in current_midxs, this performs a round-robin sampling
+                for midx in current_midxs:
+                    self.update_node(nodes[midx],self.sample(nodes[midx],transmit_power_dbm=self.transmit_power_dbm),current_midxs)
+                    nn += 1
+                
+            #If we are fully zoomed in alrady, then we just sample the comm_node to update it's empirical mean.
+            else:
+                self.update_node(self.comm_node,self.sample(self.comm_node,transmit_power_dbm=self.transmit_power_dbm),current_midxs)
+                nn += 1
+                if np.any(self.comm_node.empirical_mean_reward < np.array(previous_empirical_mean_rewards)):
+                    # 1. This just resets the MAB game.  comm_node unchanged
+                    # current_midxs = nodes[nodes[recommendation_midx].zoom_out_midx].zoom_in_midxs
+                    
+                    # 2. This zooms out to the level prior to the comm_node, which is now in contention with it's neighbors.
+                    self.comm_node = nodes[self.comm_node.zoom_out_midx]
+                    current_midxs = dcp(self.comm_node.zoom_in_midxs)
+                    previous_empirical_mean_rewards.pop(-1)
+            
+            
+                
+    def update_node(self,node,r,current_midxs):
+        """
+        Description
+        -----------
+        Updates the node's sample history, and deletes "old" samples as specified by the sampling window length "W"
+        
+        In the non-stationary setting, this "ages out" older samples of other nodes
+        
+        Parameters
+        ----------
+        node : object
+            The node to be updated.
+        r : float
+            The new sample reward.
+            
+        Returns
+        -------
+        None
+        """
+        
+        nodes = self.cb_graph.nodes
+        
+        #Update Node that was just sampled
+        if self.scale_reward:
+            node.sample_history.append(1 * r)
+        else:
+            node.sample_history.append(r)
+        if len(node.sample_history) > node.W:
+            node.sample_history.pop(0)
+        
+        #Age-out older samples on other nodes
+        if self.mode == 'non-stationary':
+            for other_node in self.cb_graph.nodes.values():
+                if other_node.midx != node.midx:
+                    other_node.sample_history.append(0.0)
+                    if len(other_node.sample_history) > node.W:
+                        other_node.sample_history.pop(0)
+        
+        for midx in current_midxs:
+            nodes[midx].num_pulls = len(np.where(np.array(nodes[midx].sample_history) != 0)[0])
+            if nodes[midx].num_pulls > 0:
+                nodes[midx].empirical_mean_reward = 1/nodes[midx].num_pulls * np.sum(nodes[midx].sample_history)
+                
+        if self.comm_node == None: 
+            self.log_data['relative_spectral_efficiency'].append(0.0)
+            self.log_data['path'].append(np.nan)
+        else: 
+            rse = self.calculate_relative_spectral_efficiency(self.comm_node)
+            if rse > 1:
+                print('pause')
+            self.log_data['relative_spectral_efficiency'].append(rse)
+            self.log_data['path'].append(self.comm_node)
+        self.log_data['samples'].append(1.0)
+        
+        self.channel.fluctuation()
+        self.set_best()
 if __name__ == '__main__':
     main()

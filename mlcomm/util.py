@@ -44,7 +44,8 @@ def randcn(M):
     noise : numpy ndarray of complex floats
         Vector representing the noise values.
     """
-    if M >1: return  1/np.sqrt(2*M) * (np.random.randn(M) + 1j* np.random.randn(M))       
+    # if M >1: return  1/np.sqrt(2*M) * (np.random.randn(M) + 1j* np.random.randn(M))       
+    if M >1: return  1/np.sqrt(2) * (np.random.randn(M) + 1j* np.random.randn(M))       
     else: return  1/np.sqrt(2) * (np.random.randn() + 1j* np.random.randn()) 
     
 def avec(angle,num_elements): 

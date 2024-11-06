@@ -30,7 +30,7 @@ import matplotlib
 from copy import deepcopy as dcp
 from numpy.linalg import inv
 import pickle
-from mlcomm.util import *
+from util import *
 
 
 class BinaryHierarchicalCodebook:
@@ -404,6 +404,16 @@ class Node:
     zoom_in_midxs : list of ints
         Provided by initializing codebook class object. Master indices of narrower beamforming vectors at h+1 that 
         the Node aggregates.  They are non-overlapping.
+        
+    Methods
+    -------
+    
+    Defaults to bandit statistics terms that are used in DBZ, may be replaced with custom attributes using ``types`` package as follows.  For an instance of ``Node``, ``node``,
+    
+    .. code-block:: python
+    
+        from types import MethodType
+        node.exploration = types.MethodType(exploration,node)
     """
     def __init__(self, params):
         """
@@ -439,6 +449,36 @@ class Node:
         self.cvg_region_stop = params['cvg_region_stop']
         self.beamwidth = np.abs(params['cvg_region_stop'] - params['cvg_region_start'])
 
+    def exploration(self,nn): 
+        #Requires 7 flops
+        nn = np.min([float(nn),self.W])
+        
+        return np.log(15.0*self.NH * (np.min([nn,self.W]))**4.0/4.0/self.delta)
+        
+    def confidence_term(self,nn): 
+        #Requires 14 flops (including exploration function computation)
+        num_pulls = len(np.where(np.array(self.sample_history) != 0)[0])
+        if num_pulls < 2: 
+            return np.inf
+        else:
+            empirical_variance = np.sum(np.array(self.sample_history)**2)/num_pulls - np.sum(self.sample_history)**2/num_pulls**2
+            return np.sqrt(4 * self.b * empirical_variance * self.exploration(nn) / num_pulls) + 2 * np.sqrt(2 * self.b * self.c) * self.exploration(nn) / (num_pulls-1) 
+    
+    def ucb(self,nn): 
+        #Requires 2W-1 + 14 flops (including confidence term)
+        num_pulls = len(np.where(np.array(self.sample_history) != 0)[0])
+        if num_pulls < 2: 
+            return np.inf
+        else:
+            return 1/num_pulls * np.sum(self.sample_history) + self.confidence_term(nn)
+    
+    def lcb(self,nn): 
+        #Requires 2W-1 + 14 flops (including confidence term)
+        num_pulls = len(np.where(np.array(self.sample_history) != 0)[0])
+        if num_pulls < 2: 
+            return -np.inf
+        else:
+            return 1/num_pulls * np.sum(self.sample_history)  - self.confidence_term(nn)
         
 def save_codebook(cb_graph,filename,savepath = './'):
     """
@@ -482,8 +522,8 @@ def load_codebook(filename,loadpath):
     cb_graph : object 
         Type instance of BinaryHierarchicalCodebook or TernaryPointedHierarchicalCodebook.  See description of class types.
     """
-    
-    return pickle.load(open(loadpath + filename + '.pkl','rb'))
+    with open(loadpath + filename + '.pkl','rb') as f:
+        return pickle.load(f)
     
 def build_hybrid_vector(F_opt,A_can,num_rf_chains,num_data_streams=1):
     """
