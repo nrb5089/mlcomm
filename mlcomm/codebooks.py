@@ -50,6 +50,11 @@ class BinaryHierarchicalCodebook:
     Uniform Linear Array (ULA) along the x-axis.  The main beam of the beamforming patterns  that correspond 
     to the beamforming vectors are non-overlapping and evenly spaced to cover the specfied swath.
     
+    Construction originally from [1] and [2]
+    
+    [1] A. Alkhateeb, O. El Ayach, G. Leus and R. W. Heath, "Channel Estimation and Hybrid Precoding for Millimeter Wave Cellular Systems," in IEEE Journal of Selected Topics in Signal Processing, vol. 8, no. 5, pp. 831-846, Oct. 2014, doi: 10.1109/JSTSP.2014.2334278.
+    [2] O. E. Ayach, S. Rajagopal, S. Abu-Surra, Z. Pi and R. W. Heath, "Spatially Sparse Precoding in Millimeter Wave MIMO Systems," in IEEE Transactions on Wireless Communications, vol. 13, no. 3, pp. 1499-1513, March 2014, doi: 10.1109/TWC.2014.011714.130846.
+
 
     Attributes
     -----------
@@ -142,9 +147,15 @@ class BinaryHierarchicalCodebook:
         self.beamwidths = np.abs(self.min_max_angles[1]-self.min_max_angles[0]) / 2**np.arange(1,self.H+1)
         self.steered_angles = [np.arange(self.min_max_angles[0] + beamwidth/2,self.min_max_angles[1],beamwidth) for beamwidth in self.beamwidths]
         
-        #Candidate vectors is the overdetermined dictionary described in Alkhateeb-2014
-        candidate_vectors = np.vstack([avec(angle, self.M) for angle in np.linspace(self.min_max_angles[0],self.min_max_angles[1],2*self.M)]).T
+        #Candidate vectors (as described in item 1 on page 836 in Alkhateeb-2014)
+        candidate_vectors = np.vstack([avec(steered_angle, self.M) for steered_angle in self.steered_angles[-1]]).T
         
+        
+        #IMPORTANT: The overcomplete dictionary of angles must be from 0 to 2pi, otherwise there are major errors.
+        assert self.M < 2048, "Maximum number of elements reached, 2048"
+        fine_angles = np.linspace(0,2*np.pi,4096)
+        overcomplete_dict_angle_matrix = np.vstack([avec(angle,self.M) for angle in fine_angles]).T
+        optimal_beamforming_vector_base = inv(overcomplete_dict_angle_matrix @ np.conj(overcomplete_dict_angle_matrix.T)) @ overcomplete_dict_angle_matrix
         
         #Initialize Nodes
         midx = 0
@@ -161,13 +172,16 @@ class BinaryHierarchicalCodebook:
                                           'cvg_region_stop' : steered_angle + beamwidth/2})
                                           # 'aggregated_indices' : np.arange(ii * 2**(self.H-hh-1), (ii+1)*2**(self.H-hh-1)) })
                 
-                aggregated_indices = np.arange(ii * 2**(self.H-hh-1), (ii+1)*2**(self.H-hh-1)) 
+                aggregated_indices = np.arange(sum(fine_angles < self.nodes[midx].cvg_region_start)-1, 4096-sum(fine_angles > self.nodes[midx].cvg_region_stop)+1)
+                # print(f"({hh},{ii}) : {aggregated_indices}")
                 
-                # optimal_beamforming_vector = np.sum([avec(steered_angle,self.M) for steered_angle in self.steered_angles[-1][self.nodes[-1].aggregated_indices]],axis = 0)
-                optimal_beamforming_vector = np.sum([avec(steered_angle,self.M) for steered_angle in self.steered_angles[-1][aggregated_indices]],axis = 0)
+                optimal_beamforming_vector = np.sum(optimal_beamforming_vector_base[:,aggregated_indices],axis = 1)
+                optimal_beamforming_vector = optimal_beamforming_vector/np.linalg.norm(optimal_beamforming_vector)
+                
                 F_bb, F_rf, F = build_hybrid_vector(optimal_beamforming_vector,candidate_vectors,self.B,self.S)
                 
                 self.nodes[midx].f_bb, self.nodes[midx].f_rf,self.nodes[midx].f = F_bb,F_rf,F
+                self.nodes[midx].f_opt = optimal_beamforming_vector
                 
                 #Define edges of the node with it's parent, child, and sibling nodes (all nearest neighbors)
                 if ii == 0: self.nodes[midx].prior_sibling = dcp(midx)
@@ -206,6 +220,13 @@ class TernaryPointedHierarchicalCodebook:
     Uniform Linear Array (ULA) along the x-axis.  The main beam of the beamforming patterns  that correspond 
     to the beamforming vectors are non-overlapping and evenly spaced to cover the specfied swath.
     
+    
+    Construction originally from [1] and [2]
+    
+    [1] A. Alkhateeb, O. El Ayach, G. Leus and R. W. Heath, "Channel Estimation and Hybrid Precoding for Millimeter Wave Cellular Systems," in IEEE Journal of Selected Topics in Signal Processing, vol. 8, no. 5, pp. 831-846, Oct. 2014, doi: 10.1109/JSTSP.2014.2334278.
+    [2] O. E. Ayach, S. Rajagopal, S. Abu-Surra, Z. Pi and R. W. Heath, "Spatially Sparse Precoding in Millimeter Wave MIMO Systems," in IEEE Transactions on Wireless Communications, vol. 13, no. 3, pp. 1499-1513, March 2014, doi: 10.1109/TWC.2014.011714.130846.
+
+
     Attributes
     -----------
     num_h0 : int
@@ -312,8 +333,14 @@ class TernaryPointedHierarchicalCodebook:
         
         #Candidate vectors is the overdetermined dictionary described in Alkhateeb-2014, since the widest beamforming vectors aggregated directions outside the coverage
         #region, we set the cardinality of the overdetermined matrix to be twice that number of beamforming vectors aggregated.
-        candidate_vectors = np.vstack([avec(angle, self.M) for angle in np.linspace(over_coverage_steered_angles[0][0]-self.beamwidths[-1]/2,over_coverage_steered_angles[0][-1]+self.beamwidths[-1]/2,2*(quantities_to_aggregate[0] + self.num_h0*3**(self.H-1)))]).T
+        candidate_vectors = np.vstack([avec(steered_angle, self.M) for steered_angle in self.steered_angles]).T
         
+        #IMPORTANT: The overcomplete dictionary of angles must be from 0 to 2pi, otherwise there are major errors.
+        n_fine = 8192
+        assert self.M < n_fine/2, "Maximum number of elements reached, 2048"
+        fine_angles = np.linspace(0,2*np.pi,n_fine)
+        overcomplete_dict_angle_matrix = np.vstack([avec(angle,self.M) for angle in fine_angles]).T
+        optimal_beamforming_vector_base = inv(overcomplete_dict_angle_matrix @ np.conj(overcomplete_dict_angle_matrix.T)) @ overcomplete_dict_angle_matrix
         
         #Initialize Nodes
         midx = 0
@@ -329,9 +356,17 @@ class TernaryPointedHierarchicalCodebook:
                                           'steered_angle' : steered_angle,
                                           'cvg_region_start' : steered_angle - beamwidth/2,
                                           'cvg_region_stop' : steered_angle + beamwidth/2})
-               
                 
-                optimal_beamforming_vector = np.sum([avec(steered_angle,self.M) for steered_angle in over_coverage_steered_angles[hh][ii:ii+quantities_to_aggregate[hh]]],axis = 0)
+                aggregated_angles = over_coverage_steered_angles[hh][ii:ii+quantities_to_aggregate[hh]]
+                # optimal_beamforming_vector = np.sum([avec(steered_angle,self.M) for steered_angle in over_coverage_steered_angles[hh][ii:ii+quantities_to_aggregate[hh]]],axis = 0)
+                
+                aggregated_indices = np.arange(sum(fine_angles < np.min(aggregated_angles))-1, n_fine-sum(fine_angles > np.max(aggregated_angles)) + 1)
+                # print(f"({hh},{ii}) : {aggregated_indices}")
+                
+                optimal_beamforming_vector = np.sum(optimal_beamforming_vector_base[:,aggregated_indices],axis = 1)
+                optimal_beamforming_vector = optimal_beamforming_vector/np.linalg.norm(optimal_beamforming_vector)
+                
+                
                 F_bb, F_rf, F = build_hybrid_vector(optimal_beamforming_vector,candidate_vectors,self.B,self.S)
                 self.nodes[midx].f_bb, self.nodes[midx].f_rf,self.nodes[midx].f = F_bb,F_rf,F
                 
@@ -580,6 +615,7 @@ def build_hybrid_vector(F_opt,A_can,num_rf_chains,num_data_streams=1):
 
         F_rf.append(A_can[:,k])
         F_rf_app = np.vstack(F_rf).T
+        # print(ii)
         F_bb = inv(np.conj(F_rf_app.T)@F_rf_app)@np.conj(F_rf_app.T)@F_opt
         if num_data_streams ==1:
             F_res = (F_opt-F_rf_app@F_bb)/np.linalg.norm(F_opt-F_rf_app@F_bb)

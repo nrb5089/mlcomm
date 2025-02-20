@@ -113,6 +113,7 @@ def pad_vec_last(x,max_len):
     return np.array(x)
 
 def deg2rad(degs): return np.pi/180 * degs
+
 def rad2deg(rads): return 180/np.pi * rads
 
 ## Plot Utilities
@@ -327,3 +328,23 @@ def init_figs():
     
     ############## Choose parameters you like
     matplotlib.rcParams.update(params_ieee)
+    return
+    
+def convert_seconds(seconds):
+    """
+    Converts a given number of seconds into hours, minutes, and seconds.
+
+    Parameters:
+    -----------
+    seconds : int or float
+        The total number of seconds.
+
+    Returns:
+    --------
+    str
+        A formatted string in the form of "HH:MM:SS".
+    """
+    hours = seconds // 3600
+    minutes = (seconds % 3600) // 60
+    secs = seconds % 60
+    return f"{int(hours):02}:{int(minutes):02}:{int(secs):02} (hrs:mins:secs)"

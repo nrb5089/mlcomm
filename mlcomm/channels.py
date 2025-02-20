@@ -1528,13 +1528,11 @@ class DynamicMotion(BasicChannel):
             self.is_dominant_path = params['is_dominant_path']
             if params['is_dominant_path']:
                 self.initial_angle = params['initial_angle']
-                self.initial_alpha = randcn(1)
+                if params['scenario'] == 'LOS': self.initial_alpha = randcn(1)
+                else: self.initial_alpha = np.sqrt(.1) * randcn(1)
             else:
                 self.initial_angle = np.random.uniform(0,2*np.pi)
-                if params['scenario'] == 'LOS':
-                    self.initial_alpha = .1 * randcn(1)
-                elif params['scenario'] == 'NLOS':
-                    self.initial_alpha = .5 * randcn(1)
+                self.initial_alpha = np.sqrt(.1) * randcn(1)
             
             self.initial_angular_velocity = params['initial_angular_velocity']
         

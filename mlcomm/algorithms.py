@@ -109,7 +109,7 @@ class AlgorithmTemplate:
         self.best_midx = np.argmax([self.sample(node,with_noise=False) for node in self.cb_graph.nodes.values()])
         self.best_node = self.cb_graph.nodes[self.best_midx]
         
-    def sample(self, node, transmit_power_dbm = 1, with_noise=True, mode='rss'): 
+    def sample(self, node, transmit_power_dbm = 0, with_noise=True, mode='rss'): 
         """
         Description
         ------------
@@ -393,34 +393,7 @@ class DBZ(AlgorithmTemplate):
         
         assert self.p[self.cb_graph.H-1] == 1, "Error: Last value of 'levels_to_play' (self.p) must be 1."
         
-        #Terms for the statistics are time-varying, hence must be calculated live as node methods
-        # def exploration(self,nn): 
-        #     nn = np.min([float(nn),self.W])
-            
-        #     return np.log(15.0*self.NH * (np.min([nn,self.W]))**4.0/4.0/self.delta)
-            
-        # def confidence_term(self,nn): 
-        #     num_pulls = len(np.where(np.array(self.sample_history) != 0)[0])
-        #     if num_pulls < 2: 
-        #         return np.inf
-        #     else:
-        #         empirical_variance = np.sum(np.array(self.sample_history)**2)/num_pulls - np.sum(self.sample_history)**2/num_pulls**2
-        #         return np.sqrt(4 * self.b * empirical_variance * self.exploration(nn) / num_pulls) + 2 * np.sqrt(2 * self.b * self.c) * self.exploration(nn) / (num_pulls-1) 
-        
-        # def ucb(self,nn): 
-        #     num_pulls = len(np.where(np.array(self.sample_history) != 0)[0])
-        #     if num_pulls < 2: 
-        #         return np.inf
-        #     else:
-        #         return 1/num_pulls * np.sum(self.sample_history) + self.confidence_term(nn)
-        
-        # def lcb(self,nn): 
-        #     num_pulls = len(np.where(np.array(self.sample_history) != 0)[0])
-        #     if num_pulls < 2: 
-        #         return -np.inf
-        #     else:
-        #         return 1/num_pulls * np.sum(self.sample_history)  - self.confidence_term(nn)
-        
+
         #Initialize node attributes and method for bandit algorithm
         for node in self.cb_graph.nodes.values():
             node.sample_history = []
@@ -429,11 +402,7 @@ class DBZ(AlgorithmTemplate):
             node.c = self.c
             node.W = self.W[node.h]
             node.NH = float(len(self.cb_graph.level_midxs[0]) + 3 * (self.cb_graph.H-1))  #Total number of beams, note that this is hard-coded for our purposes
-            # node.exploration = types.MethodType(exploration,node)
-            # node.confidence_term = types.MethodType(confidence_term,node)
-            # node.ucb = types.MethodType(ucb,node)
-            # node.lcb = types.MethodType(lcb,node)
-    
+      
     def run_alg(self,time_horizon):
         if self.mode == 'stationary': time_horizon = 10000000 #Hard stop algorithm time ceiling
         nodes = self.cb_graph.nodes
@@ -650,6 +619,194 @@ class DBZ(AlgorithmTemplate):
         self.set_best()
 
 
+
+                                 
+class OffsetMAB(AlgorithmTemplate):
+    """
+    Description
+    -----------
+    Implements the Algorithm 1 OR ALgorithm 2 from [1]  using the confidence terms from the DBZ paper in stationary and non-stationary environments. Only uses the narrowest beamforming vectors, but the "arms" are actually the offset from the arm being used for communication. In updating the rewards, the node assigned the sample history was rolled from another.  This mechanic accounts for the motion, as described in [1].
+    
+    There are some adaptation differences with aligning the time steps with the use of a beamforming vector.  The algorithm in [1] 
+    executes a beam sweep of several beamforming vectors at a single time step, which does not match my time scale.  
+    
+    [1] Zhang, Jianjun, et al. "Beam alignment and tracking for millimeter wave communications via bandit learning." IEEE Transactions on Communications 68.9 (2020): 5519-5533.
+    
+    
+    Parameters
+    ----------
+    params : dict
+        dict with params
+        
+    Attributes
+    ----------
+    cb_graph : object
+        The codebook graph associated with the simulation.
+    epsilon : float
+        'epsilon-greed' policy parameter
+    alpha : float
+        discount paramter for non-stationary rewards
+    policy : str
+        Specifies 'UCB' or 'epsilon-greedy' policy to use for beamforming vector selection
+    mode : str
+        Specifies 'stationary' or 'non-stationary' setting, either or is a valid entry
+    c : float 
+        Secondary confidence parameter
+        
+    Notes
+    -----
+    
+    'epsilon' is unused in policy 'UCB' and 'c' is unused in policy 'epsilon-greedy'
+    
+    Example
+    -------
+    bandit = OffsetMAB({'cb_graph' : cb_graph, 'channel' : channel, 'epsilon' : .1, 'alpha' : 1e-4,'mode' : 'non-stationary','policy' : 'UCB', 'c' : 1})
+    """
+    def __init__(self,params):
+        """
+        """
+        super().__init__(params)
+        self.epsilon = params['epsilon']
+        self.mode = params['mode']
+        self.policy = params['policy']
+        assert self.mode == 'stationary' or self.mode == 'non-stationary', 'Parameter Selection Error: Valid entries for parameter "mode" are "stationary" (default) and "non-stationary". '
+        assert self.policy == 'UCB' or self.policy == 'epsilon-greedy', 'Parameter Selection Error: Valid entries for paramter "policy" are "UCB" and "epsilon-greedy". '
+        self.eps = params['epsilon']
+        if self.mode == 'non-stationary': self.alpha = params['alpha']
+        elif self.mode == 'stationary': self.alpha = 0.0
+        self.c = params['c']
+        if 'transmit_power_dbm' in params: self.transmit_power_dbm = params['transmit_power_dbm']
+        else: self.transmit_power_dbm = 0
+    
+        #Initialize ALgorithm Mechanics
+        self.us = [-3,-2,-1,0,1,2,3]
+        self.bs = [2,4,6]
+        
+    def run_alg(self,time_horizon):
+        cb_graph = self.cb_graph
+        nodes = self.cb_graph.nodes
+        N = time_horizon
+        
+        self.comm_node = None
+        
+        action_space = [(u,b) for u in self.us for b in self.bs]
+        est_avg_rewards = np.zeros(len(action_space))
+        
+        #Find best beamforming vector overall to start
+        nn = 1
+        rsss = []
+        for midx in cb_graph.level_midxs[-1]:
+            rsss.append(self.perform_sample_update_channel(nn,nodes[midx]))
+            nn += 1
+        rsss = np.array(rsss)
+        est_best_midx = cb_graph.level_midxs[-1][np.argmax(rsss)]
+        num_samples_space = np.ones(len(action_space))
+
+        current_midxs = self.update_current_midxs(est_best_midx)
+        current_midxs_indices_map = [[nodes[midx].i for midx in calFub] for calFub in current_midxs]
+
+        #Update the reward acording to the maximum value obtained for a beamforming vector within each calFub (subset of beamforming vectors)
+        #We do not discount the initial beam sweep, but in reality, it might have to be.
+        for index in range(len(action_space)): est_avg_rewards[index] = np.max(rsss[current_midxs_indices_map[index]])
+
+        est_best_midxs = [dcp(est_best_midx)]
+        #Algorithm loop starts here
+        while nn < N:
+            #When you "play an arm", you are actually sampling with each beam from calFub, so depending on the cardinality of calFub, you are actually using multiple time steps
+            if self.policy == 'epsilon-greedy': 
+                explore = np.random.uniform(0,1) > 1-self.eps
+                if explore:
+                    chosen_action_index = np.random.choice(range(len(action_space)))
+                else:
+                    chosen_action_index = np.argmax(est_avg_rewards)
+                
+            elif self.policy == 'UCB': 
+                ucbs = [est_avg_rewards[index] + np.sqrt(self.c * np.log(nn)/num_samples_space[index]) for index in range(len(action_space))]
+                chosen_action_index = np.argmax(ucbs)
+                
+            #Sweep with beams from chosen arm and update rewards for all arms accroding to time out
+            Rs = []
+            for midx in current_midxs[chosen_action_index]:
+                Rs.append(self.perform_sample_update_channel(nn,nodes[midx]))
+                nn += 1
+            
+            #Update reward for chosen arm
+            est_best_midx = current_midxs[chosen_action_index][np.argmax(Rs)]
+            self.comm_node = dcp(nodes[est_best_midx])
+            est_best_midxs.append(est_best_midx)
+            R = np.max(Rs)
+            num_samples_space[chosen_action_index] += 1
+            est_avg_rewards[chosen_action_index] = dcp(est_avg_rewards[chosen_action_index]) + (R - dcp(est_avg_rewards[chosen_action_index]))/num_samples_space[chosen_action_index] #induces recursion if no dcp
+            
+            #Update rewards for discount
+            for index in range(len(est_avg_rewards)):
+                if index == chosen_action_index:
+                    est_avg_rewards[index] = self.alpha * R + (1-self.alpha) * est_avg_rewards[index] 
+                else:
+                    est_avg_rewards[index] = (1-self.alpha) * est_avg_rewards[index] 
+            
+            current_midxs = self.update_current_midxs(est_best_midx)
+        
+        return
+    
+    def perform_sample_update_channel(self,nn,node_to_sample):
+        """
+        Description
+        -----------
+        Wrapper function to perform operations necessary during sampling.
+        
+        Notes
+        -----
+        Requires 2* self.cb_graph.M +1 flops for the inner product and absolute value squared.
+        """
+        # self.update_node(node_to_sample,self.sample(node_to_sample,transmit_power_dbm=self.transmit_power_dbm))
+        r = self.sample(node_to_sample,transmit_power_dbm=self.transmit_power_dbm)
+        
+        if self.comm_node == None:
+            self.log_data['relative_spectral_efficiency'].append(0.0)
+            self.log_data['path'].append(np.nan)
+        else:
+            # self.set_best()
+            self.log_data['relative_spectral_efficiency'].append(self.calculate_relative_spectral_efficiency(self.comm_node))
+            self.log_data['path'].append(self.comm_node.midx)
+        self.channel.fluctuation(nn,(self.cb_graph.min_max_angles[0],self.cb_graph.min_max_angles[1]))
+        self.set_best()
+        return r
+    
+    def update_current_midxs(self,est_best_midx):
+        """
+        Description
+        -----------
+        The 'current_midxs' variables is intended to track the midxs associated with the subset codebook, denoted as calF_{u,b}, in [1].
+    
+        Parameters
+        ----------
+        est_best_midx : int
+            midx corresponding to the beamforming vector with the current high average rewards
+    
+        Returns
+        -------
+        current_midxs : list of ints
+            list of midxs based on the indexing of (u,b) in [1]
+    
+        """
+        #Populate each calFub (caligraphic F) according to (10) in [1], which consists of a set of subsets of beamforming vectors.
+        current_midxs = []
+        for u in self.us:
+            for b in self.bs:
+                calFub = [] 
+                for bidx in range(b):
+                    if est_best_midx + u + bidx < np.min(self.cb_graph.level_midxs[-1]):
+                        calFub.append(est_best_midx + u + bidx + len(self.cb_graph.level_midxs[-1]))
+                    elif est_best_midx + u + bidx > np.max(self.cb_graph.level_midxs[-1]):
+                        calFub.append(est_best_midx + u + bidx - len(self.cb_graph.level_midxs[-1]))
+                    else: 
+                        calFub.append(est_best_midx + u + bidx)
+                current_midxs.append(calFub)
+        return current_midxs
+    
+    
+                                
 ## Bayesian Algorithms
 class HPM(AlgorithmTemplate):
     """
@@ -829,7 +986,8 @@ class HPM(AlgorithmTemplate):
             athetai = np.array([avec(angle,self.cb_graph.M) @ np.conj(current_node.f) for angle in np.array([self.cb_graph.nodes[midx].steered_angle for midx in self.cb_graph.level_midxs[-1]])])
             nn_flops += 2 * self.cb_graph.M * N
             
-            mus = np.sum([alpha_hats[ll] *  athetai for ll in np.arange(self.channel.L)],axis = 0)
+            # mus = np.sum([alpha_hats[ll] *  athetai for ll in np.arange(self.channel.L)],axis = 0)
+            mus = np.sum([alpha_hats[ll] *  athetai for ll in np.arange(1)],axis = 0)
             nn_flops += self.channel.L
             
             if self.channel.sigma_v <= .05: sigma_v_temp = .05
@@ -875,7 +1033,6 @@ class ABT(AlgorithmTemplate):
     Notes
     -----
     
-    FixedV does not work.
     
     """
     def __init__(self,params):
@@ -1027,7 +1184,8 @@ class ABT(AlgorithmTemplate):
             athetai = np.array([avec(angle,self.cb_graph.M) @ np.conj(current_node.f) for angle in np.array([self.cb_graph.nodes[midx].steered_angle for midx in self.cb_graph.level_midxs[-1]])])
             nn_flops += 2 * self.cb_graph.M * N
             
-            mus = np.sum([alpha_hats[ll] *  athetai for ll in np.arange(self.channel.L)],axis = 0)
+            # mus = np.sum([alpha_hats[ll] *  athetai for ll in np.arange(self.channel.L)],axis = 0)
+            mus = np.sum([alpha_hats[ll] *  athetai for ll in np.arange(1)],axis = 0)
             nn_flops += self.channel.L
             
             if self.channel.sigma_v <= .05: sigma_v_temp = .05
@@ -1805,5 +1963,431 @@ class MotionTS(TASD):
         
         self.channel.fluctuation()
         self.set_best()
+        
+        
+class EKF(AlgorithmTemplate):
+    """
+    Description
+    -----------
+    Uses the Extended Kalman Filter (EKF) from [1] to select beamforming vectors based on the nearest pointing angle.
+    
+     [1] V. Va, H. Vikalo and R. W. Heath, "Beam tracking for mobile millimeter wave communication systems," 2016 IEEE Global Conference on Signal and Information Processing (GlobalSIP), Washington, DC, USA, 2016, pp. 743-747, doi: 10.1109/GlobalSIP.2016.7905941. 
+
+
+    Attributes
+    ----------
+    
+    M : int
+        number of antenna elements
+    rho : float
+        fading coefficient for channel model
+    comm_node : object
+        Node from codebook object currently being used to communicate
+        
+    
+    Methods
+    -------
+    
+    """
+    def __init__(self, params):
+        """
+        Initializes a simulation using the EKF framework in [1] algorithm with the provided parameters.
+
+        Parameters
+        ----------
+        params : dict
+            A dictionary containing the following keys:
+            - 'cb_graph': object
+                The codebook graph associated with the simulation.
+            - 'channel': object
+                The communication channel used in the simulation.
+
+        """
+        super().__init__(params)
+        self.M = self.cb_graph.M
+        self.rho = self.channel.rho
+        self.comm_node = None #initialize communication node as none to start
+        
+    def run_alg(self,time_horizon):
+        nodes = self.cb_graph.nodes
+        
+        #Take initial samples and update time index and pad RSE with zero for intial alignment period.
+        # initial_complex_samples = np.array([self.sample(nodes[midx],mode = 'complex') for midx in self.cb_graph.level_midxs[-1]])
+        nn = 1
+        initial_complex_samples = []
+        for midx in self.cb_graph.level_midxs[-1]: 
+            initial_complex_samples.append(self.sample(nodes[midx],mode = 'complex'))
+            self.log_and_update_channel(nn)
+            nn +=1
+            
+        
+        #Choose beamforming vector that yields the highest RSS, choose this as comm_node and steered_angle as initial state estimate
+        #Unsure how to initialize alpha, I just used the complex value received, but it might be easier just to pass the value from channel.
+        est_best_idx = np.argmax(np.abs(initial_complex_samples)**2)
+        est_best_midx = self.cb_graph.level_midxs[-1][est_best_idx]
+        self.comm_node = nodes[est_best_midx]
+        alpha_est = initial_complex_samples[est_best_idx]
+        
+        #Initialize KF state and covariance
+        self.x_hat_k_k = np.array([self.comm_node.steered_angle,np.real(alpha_est),np.imag(alpha_est)])
+        self.P_k_k = dcp(self.channel.Qu)
+        
+        #Main Algorithm Loop
+        while nn < time_horizon:
+            self.ekf_recursion()
+            self.log_and_update_channel(nn)
+            nn += 1
+        return
+    
+    
+    def ekf_recursion(self):
+        """
+        Standard Extended Kalman Filter recursion steps.
+
+        """
+        def wrap_angle(x): 
+            """
+            Wraps an angle to be within a specified range.
+            
+            This function adjusts the first element of the input array `x` so that it
+            falls within the specified range [angle_min, angle_max], which we set as the
+            codebook limits.
+            
+            Parameters
+            ----------
+            x : np.ndarray
+                The input array where the first element represents the angle to be wrapped.
+            Returns
+            -------
+            x : np.ndarray
+                The input array with the first element adjusted to be within the specified range.
+            """
+            angle_max = self.cb_graph.min_max_angles[1]
+            angle_min = self.cb_graph.min_max_angles[0]
+            swath_width = np.abs(angle_max-angle_min)
+            if np.isnan(x[0]):
+                print('Angle Estimate is nan')
+            x[0] = np.mod(x[0],np.pi)
+            if x[0] > angle_max: x[0] = x[0] - swath_width
+            elif x[0] < angle_min: x[0] = x[0] + swath_width
+            return x
+        
+        
+        inv = np.linalg.inv
+        
+        x_hat_k_km1 = dcp(self.x_hat_k_k)
+        P_k_km1 = self.P_k_k + self.channel.Qu #This is what they put in the paper
+        H = self.delh(x_hat_k_km1)
+        Hh = H.T
+        K = P_k_km1 @ Hh @ inv(H@P_k_km1@Hh + self.channel.Qv)
+        y = self.sample(self.comm_node, mode = 'complex')
+        y = np.array([np.real(y),np.imag(y)])
+        h = self.h(x_hat_k_km1)
+        if np.any(np.isnan(h)):
+            print('h is nan')
+        self.x_hat_k_k = x_hat_k_km1 + K @ (y - self.h(x_hat_k_km1))
+        self.P_k_k = (np.eye(3)-K@H) @ P_k_km1
+        
+        # self.fix_phase(verbose = False)
+        self.x_hat_k_k = wrap_angle(self.x_hat_k_k)
+        self.update_beam_steering(verbose = False)
+
+        return 
+    
+    def h(self,x,real = True):
+        """
+        Observation model estimate
+        
+        """
+        M = self.cb_graph.M
+        pi = np.pi
+        Phi_D = np.cos(x[0]) - np.cos(self.comm_node.steered_angle) + 1e-14
+        def e(x): return np.exp(1j * pi * x)
+        
+        # TODO: Verify the magnitude is correct, this was M^2 earlier, but we also had AoD and AoA
+        h = (x[1] + 1j*x[2])/M * (1-e(-M*Phi_D))/(1-e(-Phi_D))
+        if real: h = np.hstack([np.real(h),np.imag(h)])
+        return h
+
+    def delh(self,x,real = True,hermitian = False):
+        """
+        Linearization for observation model estimate
+        """
+        M = self.channel.M
+        pi = np.pi
+        Phi_D = np.cos(x[0]) - np.cos(self.comm_node.steered_angle) + 1e-14
+        a_hat = x[1] + 1j*x[2]
+        def e(x): return np.exp(1j * pi * x)
+        partialaod= a_hat/M * np.sin(x[0])*((-1j*M*pi*e(-M*Phi_D))*(1-e(-Phi_D))-(1-e(-M*Phi_D))*(-1j*pi*e(-Phi_D)))/(1-e(-Phi_D))**2
+        partialar = 1 /M * (1-e(-M*Phi_D))/(1-e(-Phi_D))
+        partialai = 1j/M * (1-e(-M*Phi_D))/(1-e(-Phi_D))
+        delh = np.array([partialaod,partialar,partialai])
+        if hermitian: delh = np.conj(delh)
+        if real: delh = np.vstack([np.real(delh),np.imag(delh)])
+        if hermitian: delh = np.transpose(delh)
+        return delh
+    
+    def update_beam_steering(self,verbose = False):
+        """
+        If the angle a half beamwidth away in either direction, choose the closest beamforming vector.
+        """
+        #Check Beam Switch
+        thresh = self.cb_graph.beamwidths[-1]/2
+        nodes = self.cb_graph.nodes
+        if self.x_hat_k_k[0] - self.comm_node.steered_angle > thresh: 
+            self.comm_node = nodes[self.comm_node.post_sibling]
+            if verbose: print('switch aod +')
+        elif self.x_hat_k_k[0] - self.comm_node.steered_angle < -thresh: 
+            self.comm_node = nodes[self.comm_node.prior_sibling]
+            if verbose: print('switch aod -')
+        return 
+    
+    def log_and_update_channel(self,nn):
+        """
+        Description
+        -----------
+        Wrapper function to perform operations for updating the logs and channel fluctuations
+        
+        """
+        
+        if self.comm_node == None:
+            self.log_data['relative_spectral_efficiency'].append(0.0)
+            self.log_data['path'].append(np.nan)
+        else:
+            # self.set_best()
+            self.log_data['relative_spectral_efficiency'].append(self.calculate_relative_spectral_efficiency(self.comm_node))
+            self.log_data['path'].append(self.comm_node.midx)
+            self.channel.fluctuation(nn,(self.cb_graph.min_max_angles[0],self.cb_graph.min_max_angles[1]))
+            self.set_best()
+
+        
+class PF(AlgorithmTemplate):
+    """
+    Description
+    -----------
+    Uses the Particle Filter (EKF) from [1] to select beamforming vectors based on the nearest pointing angle, and brodens the beam based on the number of antenna elements required.
+    
+    We obtain our initial state estimate by using an exhaustive search with the most narrow beams.
+    
+    Unlike the original implementation in [1], which turns elements on and off to narrow or broaden the beam, we choose beamforming vectors from the ternary beamforming codebook based on the number of elements in (15) in [1], that possesses the similar beamwidth.  For example, consider a ternary hiearchical codebook with beamwidths at each level: [24, 8, 2.67, 0.89] (in degrees), at time step n, the method in [1] determines 128 elments, which corresponds to roughly to the .89 degree beamwidth in our array of beamwidths.   After observation at time step n+1, the algorithm determines 32 elements, which 2/32 is approximately a 3.58 degree beamwidth.  Because it is wider than 2.67, we broaden the beam to the level with 8 degrees with the beamforming vector whose pattern points in the direction of the current angle estimate and broaden it.
+    
+    
+     [1] H. Chung, J. Kang, H. Kim, Y. M. Park and S. Kim, "Adaptive Beamwidth Control for mmWave Beam Tracking," in IEEE Communications Letters, vol. 25, no. 1, pp. 137-141, Jan. 2021, doi: 10.1109/LCOMM.2020.3022877.
+
+    Attributes
+    ----------
+    
+    S : int
+        number of particles
+    comm_node : object
+        Node from codebook object currently being used to communicate
+        
+    
+    Methods
+    -------
+    
+    """
+    def __init__(self, params):
+        """
+        Initializes a simulation using the EKF framework in [1] algorithm with the provided parameters.
+
+        Parameters
+        ----------
+        params : dict
+            A dictionary containing the following keys:
+            - 'cb_graph': object
+                The codebook graph associated with the simulation.
+            - 'channel': object
+                The communication channel used in the simulation.
+            - 'num_particles' : int
+                Number of particles used in the particle filter
+
+        """
+        super().__init__(params)
+        self.S = params['num_particles']
+        self.comm_node = None #initialize communication node as none to start
+        
+        
+    def run_alg(self,time_horizon):
+        nodes = self.cb_graph.nodes
+        
+        #Take initial samples and update time index and pad RSE with zero for intial alignment period.
+        # initial_complex_samples = np.array([self.sample(nodes[midx],mode = 'complex') for midx in self.cb_graph.level_midxs[-1]])
+        nn = 1
+        initial_complex_samples = []
+        for midx in self.cb_graph.level_midxs[-1]: 
+            initial_complex_samples.append(self.sample(nodes[midx],mode = 'complex'))
+            self.log_and_update_channel(nn)
+            nn +=1
+            
+        
+        #Choose beamforming vector that yields the highest RSS, choose this as comm_node and steered_angle as initial state estimate
+        #Unsure how to initialize alpha, I just used the complex value received, but it might be easier just to pass the value from channel.
+        est_best_idx = np.argmax(np.abs(initial_complex_samples)**2)
+        est_best_midx = self.cb_graph.level_midxs[-1][est_best_idx]
+        self.comm_node = nodes[est_best_midx]
+        alpha_est = initial_complex_samples[est_best_idx]
+        
+        #Initial Estimate
+        self.xk_hat = np.array([self.comm_node.steered_angle,0.0,np.real(alpha_est),np.imag(alpha_est)])
+        
+        #Initialize particles with estimate
+        self.particles = {}
+        initial_weight = 1.0 / self.S
+        for ss in np.arange(self.S):
+            self.particles[ss] = PF.Particle(ss,initial_weight,dcp(self.xk_hat))
+            
+        while nn < time_horizon:
+            
+            
+            #Generate Particles as predictions
+            self.get_predictions()
+            # for ss in np.arange(self.S):
+            #     u = np.random.multivariate_normal(np.zeros(3),self.channel.Qu)
+            #     self.particles[ss].state = self.channel.F@self.particles[ss].state + self.channel.G@u
+                
+            #Get Observation
+            # zs = self.zk()
+            z = self.sample(nodes[midx],mode = 'complex')
+            
+            #Update weights
+            self.update_weights(z)
+            
+            #Compute estimate and adjust beamformer
+            self.xk_hat = self.get_estimate()
+            if self.comm_node.steered_angle - self.xk_hat[0] > self.comm_node.beamwidth/2:
+                self.comm_node = nodes[self.comm_node.prior_sibling]
+            elif self.xk_hat[0] - self.comm_node.steered_angle > self.comm_node.beamwidth/2:
+                self.comm_node = nodes[self.comm_node.post_sibling]
+                
+            #Calculate number of active beamforming elements, and adjust beamwidth correspondingly
+            # self.Mk = np.max([np.min([np.floor(2.8/np.pi/self.zeta_k()/np.sin(self.xk_hat[2])),self.params['M_0']]),2])
+            Mk = np.max([np.min([np.floor(2.8/np.pi/self.zeta_k()/np.sin(self.comm_node.steered_angle)),self.cb_graph.M]),2])
+            notional_beamwidth = 2/Mk
+            if notional_beamwidth > self.cb_graph.beamwidths[self.comm_node.h] and self.comm_node.h > 0:
+                self.comm_node = nodes[self.comm_node.zoom_out_midx]
+            elif self.comm_node.h < self.cb_graph.H-1:
+                if notional_beamwidth <= self.cb_graph.beamwidths[self.comm_node.h+1]:
+                    self.comm_node = nodes[self.comm_node.zoom_in_midxs[1]]
+                
+            
+            
+            #Resample
+            self.resample()
+            
+            #State Fluctuation
+            # self.update_state()
+            self.log_and_update_channel(nn)
+            nn += 1
+            
+    def get_predictions(self):
+        
+        def wrap_angle(x): 
+            """
+            Wraps an angle to be within a specified range.
+            
+            This function adjusts the first element of the input array `x` so that it
+            falls within the specified range [angle_min, angle_max], which we set as the
+            codebook limits.
+            
+            Parameters
+            ----------
+            x : np.ndarray
+                The input array where the first element represents the angle to be wrapped.
+            Returns
+            -------
+            x : np.ndarray
+                The input array with the first element adjusted to be within the specified range.
+            """
+            angle_max = self.cb_graph.min_max_angles[1]
+            angle_min = self.cb_graph.min_max_angles[0]
+            swath_width = np.abs(angle_max-angle_min)
+            if np.isnan(x[0]):
+                print('Angle Estimate is nan')
+            x[0] = np.mod(x[0],np.pi)
+            if x[0] > angle_max: x[0] = x[0] - swath_width
+            elif x[0] < angle_min: x[0] = x[0] + swath_width
+            return x
+        
+        for ss in np.arange(self.S):
+            u = np.random.multivariate_normal(np.zeros(3),self.channel.Qu)
+            self.particles[ss].state = self.channel.F@self.particles[ss].state + self.channel.G@u
+            self.particles[ss].state = wrap_angle(self.particles[ss].state)
+            
+    def update_weights(self,z):
+        pdfs = []
+        old_weights = dcp([self.particles[ss].weight for ss in range(self.S)])
+        mus = []
+        for ss in np.arange(self.S):
+            x = self.particles[ss].state
+            # mu_x_s = np.conj(a(self.xk_hat[2],self.Mk)) @ self.hk(self.particles[ss].state)
+            mu_x_s = np.conj(self.comm_node.f) @ ((x[2] + 1j * x[3]) * avec(x[0],self.cb_graph.M))
+            mus.append(mu_x_s)
+            pdf_d = 1.0/ (np.pi * self.channel.sigma_v**2) * np.exp(-np.sum(np.abs(z-mu_x_s)**2)/self.channel.sigma_v**2)
+            pdfs.append(pdf_d + 1e-16)
+        mus = np.array(mus)
+        # weights = [np.array(pdfs[ss])/np.sum(pdfs) for ss in np.arange(self.params['S'])]
+        weights_unnorm = np.array([pdf * old_weight for pdf,old_weight in zip(pdfs,old_weights)])
+        weights = weights_unnorm/np.sum(weights_unnorm)
+        
+        #Assign/Normalize Weights
+        for ss in np.arange(self.S): self.particles[ss].weight = weights[ss]
+        
+    def get_estimate(self): 
+        
+        x_hat_ = np.zeros(len(self.particles[0].state))
+        for ss in np.arange(self.S):
+            x_hat_ += self.particles[ss].weight * self.particles[ss].state
+        # x_hat_[2] = np.mod(x_hat_[2],np.pi)
+        return x_hat_ 
+    
+    def zeta_k(self):
+        zeta = 0.0
+        for ss in np.arange(self.S):
+            # zeta += self.particles[ss].weight * (self.particles[ss].state[2] - self.xk_hat[2])**2
+            zeta += self.particles[ss].weight * (self.particles[ss].state[0] - self.comm_node.steered_angle)**2
+        return np.sqrt(zeta)
+    
+    def resample(self):
+        """
+        Resampling routine from https://github.com/rlabbe/Kalman-and-Bayesian-Filters-in-Python/blob/master/12-Particle-Filters.ipynb
+        """
+        weights = [self.particles[ss].weight for ss in range(self.S)]
+        cumulative_sum = np.cumsum(weights)
+        cumulative_sum[-1] = 1.0
+        indexes = np.searchsorted(cumulative_sum,np.random.uniform(0,1,self.S))
+        
+        new_states = [dcp(self.particles[ss].state) for ss in indexes]
+        for ss in range(self.S): 
+            self.particles[ss].state = dcp(new_states[ss])
+            self.particles[ss].weight = 1/self.S
+    
+    def log_and_update_channel(self,nn):
+        """
+        Description
+        -----------
+        Wrapper function to perform operations for updating the logs and channel fluctuations
+        
+        """
+        
+        if self.comm_node == None:
+            self.log_data['relative_spectral_efficiency'].append(0.0)
+            self.log_data['path'].append(np.nan)
+        else:
+            # self.set_best()
+            self.log_data['relative_spectral_efficiency'].append(self.calculate_relative_spectral_efficiency(self.comm_node))
+            self.log_data['path'].append(self.comm_node.midx)
+            self.channel.fluctuation(nn,(self.cb_graph.min_max_angles[0],self.cb_graph.min_max_angles[1]))
+            self.set_best()
+            
+    class Particle:
+        def __init__(self,index,initial_weight,initial_state):
+            # self.params = params
+            self.index = index
+            self.weight = initial_weight
+            self.state = initial_state
+
+
+
 if __name__ == '__main__':
     main()
