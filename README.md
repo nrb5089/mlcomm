@@ -16,6 +16,9 @@ The package offers the following submodules targeted at Uniform Linear Array (UL
     - Hierarchical Posterior Matching (HPM) [REF](https://doi.org/10.1109/JSAC.2019.2933967)
     - Active Beam Tracking (ABT) [REF](https://doi.org/10.1109/ICC42927.2021.9500601)
     - Two-Phase Heteroscedastic Track-and-Stop (2PHTS) [REF](https://doi.org/10.1109/TWC.2022.3217131)
+    - Beam Alignment and Tracking Bandit Learning (BA-T) [REF](https://doi.org/10.1109/TCOMM.2020.2988256)
+    - Extended Kalman Filter (EKF) [REF] (https://doi.org/10.1109/GlobalSIP.2016.7905941)
+    - Particle Filter (PF) for Beamwidth Adjustments [REF](https://doi.org/10.1109/LCOMM.2020.3022877)
     - Track-and-Stop Tracking (TST) [REF] (In Review for IEEE ICC 2025)
         
 - mlcomm/channels
@@ -58,6 +61,13 @@ In order to reproduce the experiments from [1] and [2], please follow the instru
 2. For TST, performance over different severity of ME motion and SNR can be simulated using the script ```python hpm_ia_local.py``` and ```python abt_dm_local.py```, for initial alignment and tracking, respectively.
     - Simulations attempt to utilize multiple processors on the host machine.
 3. Data is logged in ```data/ia``` or ```data/dm```, respectively.
+
+
+
+### Other Algorithms
+
+The above steps may be used as well to run various algorithms for comparison in [1], use directories ```<alg>_experiments``` and run ```<alg>_dm_local.py```.
+
 
 - [1] N. Blinn and M. Bloch, “Multi-armed bandit dynamic beam zoomingfor mmwave alignment and tracking,” 2024. [Online]. Available: https://arxiv.org/abs/2209.02896
 - [2] N. Blinn and M. Bloch, "Track-and-Stop for Initial Alignment and Tracking," 2024, (In Review) 

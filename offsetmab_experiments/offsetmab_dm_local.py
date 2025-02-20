@@ -6,8 +6,6 @@ from time import time
 import pickle
 import numpy as np
 from copy import deepcopy as dcp
-from scipy.special import lambertw as W
-from scipy.special import erf
 import multiprocessing as mp
 
 from codebooks_test import *
@@ -18,8 +16,9 @@ from channels import *
 from util import *
 
 def main():
-    cb_graph = load_codebook(filename='demo_ternary_codebook', loadpath='../tests/')
-    run_multi_parallel_dm(cb_graph,resume = False)
+    
+    cb_graph = load_codebook(filename='demo_ternary_codebook', loadpath='./')
+    run_multi_parallel_dm(cb_graph, resume = False)
     
     #run_single_dm_demo(cb_graph)
     
@@ -36,10 +35,9 @@ def run_single_dm_demo(cb_graph):
 def run_single_dm(seed,params_dict):
     sigma_u = params_dict['sigma_u']
     snr_db = params_dict['snr_db']
-    #cb_graph = dcp(load_codebook(filename=f'tst_codebook_v0', loadpath='../dev/'))
     cb_graph = dcp(params_dict['cb_graph'])
     scenario =params_dict['scenario']
-    eps =params_dict['eps']
+    
     num_timesteps = 2000
     np.random.seed(seed = seed)
     
@@ -56,16 +54,8 @@ def run_single_dm(seed,params_dict):
                              'mode' : 'WGNA', 
                              'seed' : seed})
     
-    bandit = DBZ({'cb_graph' : cb_graph, 
-                  'channel' : channel, 
-                  'delta' : .1, 
-                  'epsilon' : eps, 
-                  'sample_window_lengths' : np.array([45, 30, 15,  9,]), #Pass as nparray or fails, fix this later. 
-                  'mode' : 'non-stationary', 
-                  'levels_to_play' : [1,1,1,1], 
-                  'a' : 1, 
-                  'b' : 1e-2, 
-                  'c' : 1e-5})
+    bandit = OffsetMAB({'cb_graph' : cb_graph, 'channel' : channel, 'epsilon' : .1, 'alpha' : 1e-4,'mode' : 'non-stationary','policy' : 'UCB', 'c' : 1})
+    
     t0 = time()
     bandit.run_alg(num_timesteps)
     bandit.log_data['runtime'] = time() - t0
@@ -80,24 +70,22 @@ def run_multi_parallel_dm(cb_graph,resume = False):
     
     params_dicts = []
     
-    for scenario in ['LOS']:
+    for scenario in ['NLOS']:
         for snr_db in np.arange(15,51,5)[-1::-1]:
-            # for eps in [1e-9,1e-7,1e-4]:
-            for eps in [1e-4]:
-                for sigma_u in [.0001,.00025,.0005,.001]:
-                    params_dicts.append({'snr_db' : snr_db, 'sigma_u' : sigma_u, 'scenario' : scenario, 'eps' : eps, 'cb_graph' : dcp(cb_graph)})
-    
+            for sigma_u in [.0001,.00025,.0005,.001]:
+                for alpha in [.01,.001,.0001]:
+                    for c in [.001,.01]:
+                        params_dicts.append({'snr_db' : snr_db, 'sigma_u' : sigma_u, 'c' : c, 'alpha' : alpha, 'scenario' : scenario, 'cb_graph' : dcp(cb_graph)})
     
     batch_size = mp.cpu_count()-1
     num_batches = int(np.ceil(num_sims/batch_size))
     last_batch_size = num_sims % batch_size
     
     os.makedirs("./data/dm/",exist_ok = True)
-    # params_dict = params_dicts[config_idx] #if just running one, need to change indent
     for params_dict in params_dicts:
         print(f"Starting simulations for {params_dict['snr_db']} SNR, {params_dict['sigma_u']} sigma_u, {params_dict['eps']} eps.")
         if resume:
-            data_dict = pickle.load(open(f"./data/dm/snr_{params_dict['snr_db']}_sigma_u_{params_dict['sigma_u']}_scenario_{params_dict['scenario']}.pkl",'rb'))
+            data_dict = pickle.load(open(f"./data/dm/snr_{params_dict['snr_db']}_sigma_u_{params_dict['sigma_u']}_alpha_{params_dict['alpha']}_c_{params_dict['c']}_scenario_{params_dict['scenario']}.pkl",'rb'))
             start_seed = data_dict['last_seed'] + 1
             num_sims = num_sims - start_seed
             rse_summed = data_dict['rse_summed']
@@ -136,8 +124,7 @@ def run_multi_parallel_dm(cb_graph,resume = False):
                 runtime_summed = runtime_summed + np.sum(out_runtimes)
                 runtime_sq_summed = runtime_sq_summed + np.sum(out_runtimes**2)
     
-            pickle.dump({'rse_summed': rse_summed, 'rse_sq_summed' : rse_sq_summed,  'num_sims' : num_sims, 'runtime_summed' : runtime_summed, 'runtime_sq_summed' : runtime_sq_summed,'last_seed' : batch_seeds[-1]},open(f"./data/dm/snr_{params_dict['snr_db']}_sigma_u_{params_dict['sigma_u']}_eps_{params_dict['eps']}_scenario_{params_dict['scenario']}.pkl",'wb'))
-            # pickle.dump({'out_summed': out_summed, 'num_sims' : num_sims, 'runtime_summed' : runtime_summed, 'runtime_sq_summed' : runtime_sq_summed,'last_seed' : batch_seeds[-1]},open(f"./data/dm_tst_codebook/dm/snr_{params_dict['snr_db']}_sigma_u_{params_dict['sigma_u']}_scenario_{params_dict['scenario']}.pkl",'wb'))
+            pickle.dump({'rse_summed': rse_summed, 'rse_sq_summed' : rse_sq_summed,  'num_sims' : num_sims, 'runtime_summed' : runtime_summed, 'runtime_sq_summed' : runtime_sq_summed,'last_seed' : batch_seeds[-1]},open(f"./data/dm/snr_{params_dict['snr_db']}_sigma_u_{params_dict['sigma_u']}_alpha_{params_dict['alpha']}_c_{params_dict['c']}_scenario_{params_dict['scenario']}.pkl",'wb'))
     return rse_summed/num_sims
     
 if __name__ == '__main__':
