@@ -1,40 +1,140 @@
 <!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-<html lang="en" data-content_root="./">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>mlcomm.channels &mdash; mlcomm 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css?v=148a585b" />
 
-    <title>mlcomm.channels &#8212; mlcomm 0.1 documentation</title>
-    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d1102ebc" />
-    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=12dfc556" />
-    <script src="_static/documentation_options.js?v=2709fde1"></script>
-    <script src="_static/doctools.js?v=9a2dae69"></script>
-    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=2709fde1"></script>
+        <script src="_static/doctools.js?v=9a2dae69"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="mlcomm.util" href="util.html" />
-    <link rel="prev" title="mlcomm.codebooks" href="codebooks.html" />
-   
-  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
-  
+    <link rel="prev" title="mlcomm.codebooks" href="codebooks.html" /> 
+</head>
 
-  
-  
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
 
-  </head><body>
-  
-
-    <div class="document">
-      <div class="documentwrapper">
-        <div class="bodywrapper">
           
+          
+          <a href="index.html" class="icon icon-home">
+            mlcomm
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="setup_and_installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Functional Blocks</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="algorithms.html">mlcomm.algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="codebooks.html">mlcomm.codebooks</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">mlcomm.channels</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#mlcomm.channels.AWGN"><code class="docutils literal notranslate"><span class="pre">AWGN</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#mlcomm.channels.AWGN.fluctuation"><code class="docutils literal notranslate"><span class="pre">AWGN.fluctuation()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#mlcomm.channels.BasicChannel"><code class="docutils literal notranslate"><span class="pre">BasicChannel</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#mlcomm.channels.BasicChannel.array_response"><code class="docutils literal notranslate"><span class="pre">BasicChannel.array_response()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#mlcomm.channels.Channel"><code class="docutils literal notranslate"><span class="pre">Channel</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#mlcomm.channels.Channel.array_response"><code class="docutils literal notranslate"><span class="pre">Channel.array_response()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#mlcomm.channels.DynamicMotion"><code class="docutils literal notranslate"><span class="pre">DynamicMotion</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#mlcomm.channels.DynamicMotion.Path"><code class="docutils literal notranslate"><span class="pre">DynamicMotion.Path</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mlcomm.channels.DynamicMotion.fluctuation"><code class="docutils literal notranslate"><span class="pre">DynamicMotion.fluctuation()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#mlcomm.channels.NYU1"><code class="docutils literal notranslate"><span class="pre">NYU1</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#mlcomm.channels.NYU1.fluctuation"><code class="docutils literal notranslate"><span class="pre">NYU1.fluctuation()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#mlcomm.channels.NYU2"><code class="docutils literal notranslate"><span class="pre">NYU2</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#mlcomm.channels.NYU2.SpatiallyCoherentPosition"><code class="docutils literal notranslate"><span class="pre">NYU2.SpatiallyCoherentPosition</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mlcomm.channels.NYU2.build_h"><code class="docutils literal notranslate"><span class="pre">NYU2.build_h()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mlcomm.channels.NYU2.fluctuation"><code class="docutils literal notranslate"><span class="pre">NYU2.fluctuation()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mlcomm.channels.NYU2.get_d_az_el"><code class="docutils literal notranslate"><span class="pre">NYU2.get_d_az_el()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mlcomm.channels.NYU2.get_delay_info"><code class="docutils literal notranslate"><span class="pre">NYU2.get_delay_info()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mlcomm.channels.NYU2.get_grid_index"><code class="docutils literal notranslate"><span class="pre">NYU2.get_grid_index()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mlcomm.channels.NYU2.get_los_map"><code class="docutils literal notranslate"><span class="pre">NYU2.get_los_map()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mlcomm.channels.NYU2.get_sf_map"><code class="docutils literal notranslate"><span class="pre">NYU2.get_sf_map()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mlcomm.channels.NYU2.set_environment"><code class="docutils literal notranslate"><span class="pre">NYU2.set_environment()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mlcomm.channels.NYU2.update_me"><code class="docutils literal notranslate"><span class="pre">NYU2.update_me()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#mlcomm.channels.NYU_preset"><code class="docutils literal notranslate"><span class="pre">NYU_preset</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#mlcomm.channels.NYU_preset.channel_fluctuation"><code class="docutils literal notranslate"><span class="pre">NYU_preset.channel_fluctuation()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#mlcomm.channels.RicianAR1"><code class="docutils literal notranslate"><span class="pre">RicianAR1</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#mlcomm.channels.RicianAR1.fluctuation"><code class="docutils literal notranslate"><span class="pre">RicianAR1.fluctuation()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="util.html">mlcomm.util</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Tutorials:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/simulation_quickstart.html">Simulation Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/building_codebooks.html">Codebook Construction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/algorithm_prototypes.html">Algorithm Prototypes and Templates</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/sphinx_rtd_relatively_painless.html">Getting a RTD Started for Git Repo</a></li>
+</ul>
 
-          <div class="body" role="main">
-            
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">mlcomm</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">mlcomm.channels</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/channels.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
   <img alt="_images/atl2077_gold.png" src="_images/atl2077_gold.png" />
 <section id="module-mlcomm.channels">
-<span id="mlcomm-channels"></span><h1>mlcomm.channels<a class="headerlink" href="#module-mlcomm.channels" title="Link to this heading">¶</a></h1>
+<span id="mlcomm-channels"></span><h1>mlcomm.channels<a class="headerlink" href="#module-mlcomm.channels" title="Link to this heading"></a></h1>
 <p>Adaptive Communication Decision and Information Systems (ACDIS) - User License
 <a class="reference external" href="https://bloch.ece.gatech.edu/researchgroup/">https://bloch.ece.gatech.edu/researchgroup/</a></p>
 <p>Copyright (c) 2024-2025 Georgia Institute of Technology</p>
@@ -56,13 +156,13 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="mlcomm.channels.AWGN">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mlcomm.channels.</span></span><span class="sig-name descname"><span class="pre">AWGN</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.channels.AWGN" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mlcomm.channels.</span></span><span class="sig-name descname"><span class="pre">AWGN</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.channels.AWGN" title="Link to this definition"></a></dt>
 <dd><section id="description">
-<h2>Description<a class="headerlink" href="#description" title="Link to this heading">¶</a></h2>
+<h2>Description<a class="headerlink" href="#description" title="Link to this heading"></a></h2>
 <p>Additive White Gaussian Noise Channel</p>
 </section>
 <section id="attributes">
-<h2>Attributes<a class="headerlink" href="#attributes" title="Link to this heading">¶</a></h2>
+<h2>Attributes<a class="headerlink" href="#attributes" title="Link to this heading"></a></h2>
 <dl class="simple">
 <dt>M<span class="classifier">int</span></dt><dd><p>Number of elements in the array.</p>
 </dd>
@@ -73,7 +173,7 @@ OTHER DEALINGS IN THE SOFTWARE.</p>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="mlcomm.channels.AWGN.fluctuation">
-<span class="sig-name descname"><span class="pre">fluctuation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.channels.AWGN.fluctuation" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">fluctuation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.channels.AWGN.fluctuation" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </section>
@@ -81,10 +181,10 @@ OTHER DEALINGS IN THE SOFTWARE.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="mlcomm.channels.BasicChannel">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mlcomm.channels.</span></span><span class="sig-name descname"><span class="pre">BasicChannel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.channels.BasicChannel" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mlcomm.channels.</span></span><span class="sig-name descname"><span class="pre">BasicChannel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.channels.BasicChannel" title="Link to this definition"></a></dt>
 <dd><p>A base class to represent a communication channel.  Transmit power assumed to be unitary.</p>
 <section id="id1">
-<h2>Attributes<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h2>
+<h2>Attributes<a class="headerlink" href="#id1" title="Link to this heading"></a></h2>
 <dl class="simple">
 <dt>cb_graph<span class="classifier">object </span></dt><dd><p>Type instance of BinaryHierarchicalCodebook or TrinaryPointedHierarchicalCodebook.  See description of class types in mlcomm.codebooks.</p>
 </dd>
@@ -99,16 +199,16 @@ OTHER DEALINGS IN THE SOFTWARE.</p>
 </dl>
 </section>
 <section id="methods">
-<h2>Methods<a class="headerlink" href="#methods" title="Link to this heading">¶</a></h2>
+<h2>Methods<a class="headerlink" href="#methods" title="Link to this heading"></a></h2>
 <dl class="simple">
 <dt>array_reponse</dt><dd><p>Generates the noisy channel response with respect to specified snr.</p>
 </dd>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="mlcomm.channels.BasicChannel.array_response">
-<span class="sig-name descname"><span class="pre">array_response</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">transmit_power_dbm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">with_noise</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.channels.BasicChannel.array_response" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">array_response</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">transmit_power_dbm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">with_noise</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.channels.BasicChannel.array_response" title="Link to this definition"></a></dt>
 <dd><section id="notes">
-<h3>Notes<a class="headerlink" href="#notes" title="Link to this heading">¶</a></h3>
+<h3>Notes<a class="headerlink" href="#notes" title="Link to this heading"></a></h3>
 <p>The arg parameter ‘transmit_power_dbm’ is used only for debugging in this particular class object.</p>
 <p>It is also a placeholder so that algorithms may use either channel model.</p>
 </section>
@@ -119,11 +219,11 @@ OTHER DEALINGS IN THE SOFTWARE.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="mlcomm.channels.Channel">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mlcomm.channels.</span></span><span class="sig-name descname"><span class="pre">Channel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.channels.Channel" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mlcomm.channels.</span></span><span class="sig-name descname"><span class="pre">Channel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.channels.Channel" title="Link to this definition"></a></dt>
 <dd><p>A base class to represent a communication channel.  scenario dependent parameters dictate transmit power.  Designate noise variance by the attribute
 sigma_v.</p>
 <section id="id2">
-<h2>Attributes<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<h2>Attributes<a class="headerlink" href="#id2" title="Link to this heading"></a></h2>
 <dl class="simple">
 <dt>cb_graph<span class="classifier">object </span></dt><dd><p>Type instance of BinaryHierarchicalCodebook or TrinaryPointedHierarchicalCodebook.  See description of class types in mlcomm.codebooks.</p>
 </dd>
@@ -136,14 +236,14 @@ sigma_v.</p>
 </dl>
 </section>
 <section id="id3">
-<h2>Methods<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
+<h2>Methods<a class="headerlink" href="#id3" title="Link to this heading"></a></h2>
 <dl class="simple">
 <dt>array_reponse</dt><dd><p>Generates the noisy channel response with respect to specified snr.</p>
 </dd>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="mlcomm.channels.Channel.array_response">
-<span class="sig-name descname"><span class="pre">array_response</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">transmit_power_dbm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">with_noise</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.channels.Channel.array_response" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">array_response</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">transmit_power_dbm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">with_noise</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.channels.Channel.array_response" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </section>
@@ -151,10 +251,10 @@ sigma_v.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="mlcomm.channels.DynamicMotion">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mlcomm.channels.</span></span><span class="sig-name descname"><span class="pre">DynamicMotion</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.channels.DynamicMotion" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mlcomm.channels.</span></span><span class="sig-name descname"><span class="pre">DynamicMotion</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.channels.DynamicMotion" title="Link to this definition"></a></dt>
 <dd><p>DynamicMotion is a class to represent various parameters and computations for a communication channel with a uniform linear array (ULA) along the x-axis.</p>
 <section id="id4">
-<h2>Attributes<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h2>
+<h2>Attributes<a class="headerlink" href="#id4" title="Link to this heading"></a></h2>
 <dl class="simple">
 <dt>M<span class="classifier">int</span></dt><dd><p>Number of elements in the array.</p>
 </dd>
@@ -191,14 +291,14 @@ sigma_v.</p>
 </dl>
 </section>
 <section id="id5">
-<h2>Methods<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h2>
+<h2>Methods<a class="headerlink" href="#id5" title="Link to this heading"></a></h2>
 <dl class="simple">
 <dt>fluctuation(self):</dt><dd><p>Updates the channel state to simulate fluctuations in movement and fading.</p>
 </dd>
 </dl>
 </section>
 <section id="id6">
-<h2>Notes<a class="headerlink" href="#id6" title="Link to this heading">¶</a></h2>
+<h2>Notes<a class="headerlink" href="#id6" title="Link to this heading"></a></h2>
 <p>Multi-path effects tend to take place around the maain path, we choose this value
 to be .35 radians (~20 degrees).  More detail available in [2]
 - [1] Akdeniz, Mustafa Riza, et al. “Millimeter wave channel modeling and cellular capacity evaluation.” IEEE journal on selected areas in communications 32.6 (2014): 1164-1179.
@@ -208,18 +308,18 @@ to be .35 radians (~20 degrees).  More detail available in [2]
 </ul>
 <dl class="py class">
 <dt class="sig sig-object py" id="mlcomm.channels.DynamicMotion.Path">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.channels.DynamicMotion.Path" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.channels.DynamicMotion.Path" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="mlcomm.channels.DynamicMotion.fluctuation">
-<span class="sig-name descname"><span class="pre">fluctuation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angle_limits</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(0,</span> <span class="pre">3.141592653589793)</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.channels.DynamicMotion.fluctuation" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">fluctuation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angle_limits</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(0,</span> <span class="pre">3.141592653589793)</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.channels.DynamicMotion.fluctuation" title="Link to this definition"></a></dt>
 <dd><section id="id7">
-<h3>Description<a class="headerlink" href="#id7" title="Link to this heading">¶</a></h3>
+<h3>Description<a class="headerlink" href="#id7" title="Link to this heading"></a></h3>
 <p>Time fluctuation of channel due to fading and motion.</p>
 </section>
 <section id="parameters">
-<h3>Parameters<a class="headerlink" href="#parameters" title="Link to this heading">¶</a></h3>
+<h3>Parameters<a class="headerlink" href="#parameters" title="Link to this heading"></a></h3>
 <dl class="simple">
 <dt>angle_limits<span class="classifier">tuple of floats</span></dt><dd><p>tuple indicating min and max angles of simulation</p>
 </dd>
@@ -232,16 +332,16 @@ to be .35 radians (~20 degrees).  More detail available in [2]
 
 <dl class="py class">
 <dt class="sig sig-object py" id="mlcomm.channels.NYU1">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mlcomm.channels.</span></span><span class="sig-name descname"><span class="pre">NYU1</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.channels.NYU1" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mlcomm.channels.</span></span><span class="sig-name descname"><span class="pre">NYU1</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.channels.NYU1" title="Link to this definition"></a></dt>
 <dd><section id="id8">
-<h2>Description<a class="headerlink" href="#id8" title="Link to this heading">¶</a></h2>
+<h2>Description<a class="headerlink" href="#id8" title="Link to this heading"></a></h2>
 <p>Channel model based on Table 1 in [1] for a uniform linear array (ULA) along the x-axis. For our purposes, we consider the outage probability to be zero. 
 We maintain the same path angles along with the slow time fading stochastic value governed by sigma_dB. 
 When initialized, a value is selected and held. We also assume zero Doppler.</p>
 <p>[1] Akdeniz, Mustafa Riza, et al. “Millimeter wave channel modeling and cellular capacity evaluation.” IEEE journal on selected areas in communications 32.6 (2014): 1164-1179.</p>
 </section>
 <section id="id9">
-<h2>Attributes<a class="headerlink" href="#id9" title="Link to this heading">¶</a></h2>
+<h2>Attributes<a class="headerlink" href="#id9" title="Link to this heading"></a></h2>
 <blockquote>
 <div><dl class="simple">
 <dt>M<span class="classifier">int</span></dt><dd><p>Number of elements in the array.</p>
@@ -298,7 +398,7 @@ When initialized, a value is selected and held. We also assume zero Doppler.</p>
 </div></blockquote>
 </section>
 <section id="id10">
-<h2>Methods<a class="headerlink" href="#id10" title="Link to this heading">¶</a></h2>
+<h2>Methods<a class="headerlink" href="#id10" title="Link to this heading"></a></h2>
 <blockquote>
 <div><dl class="simple">
 <dt>__init__(self, params)</dt><dd><p>Initializes the channel model with the given parameters.</p>
@@ -307,7 +407,7 @@ When initialized, a value is selected and held. We also assume zero Doppler.</p>
 </div></blockquote>
 </section>
 <section id="id11">
-<h2>Notes<a class="headerlink" href="#id11" title="Link to this heading">¶</a></h2>
+<h2>Notes<a class="headerlink" href="#id11" title="Link to this heading"></a></h2>
 <p>We reorganize the paths such that the strongest path is always the first indexed path.</p>
 <p>Our model has some minor additions from the paper, we incorporate the notion of ‘Rural’ and ‘Urban’ modes to distinguish between
 scenarios where there is either one dominant path with at most one cluster or the specified number of paths/clusters as denoted in [1].</p>
@@ -315,7 +415,7 @@ scenarios where there is either one dominant path with at most one cluster or th
 is normalized.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="mlcomm.channels.NYU1.fluctuation">
-<span class="sig-name descname"><span class="pre">fluctuation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.channels.NYU1.fluctuation" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">fluctuation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.channels.NYU1.fluctuation" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </section>
@@ -323,9 +423,9 @@ is normalized.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="mlcomm.channels.NYU2">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mlcomm.channels.</span></span><span class="sig-name descname"><span class="pre">NYU2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.channels.NYU2" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mlcomm.channels.</span></span><span class="sig-name descname"><span class="pre">NYU2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.channels.NYU2" title="Link to this definition"></a></dt>
 <dd><section id="id12">
-<h2>Description<a class="headerlink" href="#id12" title="Link to this heading">¶</a></h2>
+<h2>Description<a class="headerlink" href="#id12" title="Link to this heading"></a></h2>
 <p>Channel model based on the publications from NYU Wireless, many functions are derived directly from the NYU source code (<a class="reference external" href="https://wireless.engineering.nyu.edu/nyusim/">https://wireless.engineering.nyu.edu/nyusim/</a>)</p>
 <p>[1] Introduces the model and how to construct it, [2] introduces NYU Sim, and [3] adds the spatial consistency effects on top of [1] into the utility in [2] with additional data/effects from [4,5].</p>
 <p>Generates a grid for correlated spatial variables (encompassing both LOS and NLOS environments) that is of size 400 x 400 meters.  The array is placed at the center
@@ -339,10 +439,10 @@ of the 400 meters and is assumed at (x,y) = (0,0).</p>
 <p>Many functions are directly translated from the NYU Sim MATLAB Source Code, including <code class="docutils literal notranslate"><span class="pre">get_los_map</span></code>, <code class="docutils literal notranslate"><span class="pre">get_sf_map</span></code>, <code class="docutils literal notranslate"><span class="pre">get_delay_info</span></code>.</p>
 </section>
 <section id="id13">
-<h2>Attributes<a class="headerlink" href="#id13" title="Link to this heading">¶</a></h2>
+<h2>Attributes<a class="headerlink" href="#id13" title="Link to this heading"></a></h2>
 </section>
 <section id="id14">
-<h2>Methods<a class="headerlink" href="#id14" title="Link to this heading">¶</a></h2>
+<h2>Methods<a class="headerlink" href="#id14" title="Link to this heading"></a></h2>
 <blockquote>
 <div><dl class="simple">
 <dt>set_environment</dt><dd><p>Sets the object instance environment variables, i.e., environment ‘LOS’, ‘NLOS’, with specified scenario according to the ME position triple passed to the method as an arg.</p>
@@ -353,39 +453,39 @@ of the 400 meters and is assumed at (x,y) = (0,0).</p>
 </div></blockquote>
 </section>
 <section id="id15">
-<h2>Notes<a class="headerlink" href="#id15" title="Link to this heading">¶</a></h2>
+<h2>Notes<a class="headerlink" href="#id15" title="Link to this heading"></a></h2>
 <p>This implementation does not consider polarization, human blockage, or indoor-outdoor penetration loss factors</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="mlcomm.channels.NYU2.SpatiallyCoherentPosition">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SpatiallyCoherentPosition</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.channels.NYU2.SpatiallyCoherentPosition" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SpatiallyCoherentPosition</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.channels.NYU2.SpatiallyCoherentPosition" title="Link to this definition"></a></dt>
 <dd><section id="id16">
-<h3>Description<a class="headerlink" href="#id16" title="Link to this heading">¶</a></h3>
+<h3>Description<a class="headerlink" href="#id16" title="Link to this heading"></a></h3>
 <p>Used with the NYU2 channel class to organize the grid of spatially correlated values.</p>
 </section>
 <section id="id17">
-<h3>Parameters<a class="headerlink" href="#id17" title="Link to this heading">¶</a></h3>
+<h3>Parameters<a class="headerlink" href="#id17" title="Link to this heading"></a></h3>
 <p>params - dict</p>
 </section>
 <section id="id18">
-<h3>Notes<a class="headerlink" href="#id18" title="Link to this heading">¶</a></h3>
+<h3>Notes<a class="headerlink" href="#id18" title="Link to this heading"></a></h3>
 <p>Careful with units, some parameters are derived in dB, but calculations are in mW.</p>
 </section>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="mlcomm.channels.NYU2.build_h">
-<span class="sig-name descname"><span class="pre">build_h</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.channels.NYU2.build_h" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">build_h</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.channels.NYU2.build_h" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="mlcomm.channels.NYU2.fluctuation">
-<span class="sig-name descname"><span class="pre">fluctuation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_max_angles</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(0,</span> <span class="pre">3.14159)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tau</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'normal'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.channels.NYU2.fluctuation" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">fluctuation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_max_angles</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(0,</span> <span class="pre">3.14159)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tau</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'normal'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.channels.NYU2.fluctuation" title="Link to this definition"></a></dt>
 <dd><section id="id19">
-<h3>Description<a class="headerlink" href="#id19" title="Link to this heading">¶</a></h3>
+<h3>Description<a class="headerlink" href="#id19" title="Link to this heading"></a></h3>
 <p>Channel fluctuation, the ME undergoes motion and the environment is checked to be changed (i.e., from LOS to NLOS).  If so we reinitialize the angles in the respective way.  The first angle in the ‘LOS’ environment is always the ME relative to the BS.</p>
 </section>
 <section id="id20">
-<h3>Parameters<a class="headerlink" href="#id20" title="Link to this heading">¶</a></h3>
+<h3>Parameters<a class="headerlink" href="#id20" title="Link to this heading"></a></h3>
 <dl class="simple">
 <dt>mode<span class="classifier">str</span></dt><dd><p>valid choices are ‘normal’ and ‘intialization’, defaults to ‘normal’.  Set to ‘initialization’ in the __init__ method to get initial conditions for ME position.</p>
 </dd>
@@ -395,13 +495,13 @@ of the 400 meters and is assumed at (x,y) = (0,0).</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="mlcomm.channels.NYU2.get_d_az_el">
-<span class="sig-name descname"><span class="pre">get_d_az_el</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.channels.NYU2.get_d_az_el" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">get_d_az_el</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.channels.NYU2.get_d_az_el" title="Link to this definition"></a></dt>
 <dd><section id="id21">
-<h3>Description<a class="headerlink" href="#id21" title="Link to this heading">¶</a></h3>
+<h3>Description<a class="headerlink" href="#id21" title="Link to this heading"></a></h3>
 <p>Translates x,y,z position into spherical coordinates relative to the origin</p>
 </section>
 <section id="id22">
-<h3>Parameters<a class="headerlink" href="#id22" title="Link to this heading">¶</a></h3>
+<h3>Parameters<a class="headerlink" href="#id22" title="Link to this heading"></a></h3>
 <dl class="simple">
 <dt>x<span class="classifier">float</span></dt><dd><p>Position in x-coordinate</p>
 </dd>
@@ -412,7 +512,7 @@ of the 400 meters and is assumed at (x,y) = (0,0).</p>
 </dl>
 </section>
 <section id="returns">
-<h3>Returns<a class="headerlink" href="#returns" title="Link to this heading">¶</a></h3>
+<h3>Returns<a class="headerlink" href="#returns" title="Link to this heading"></a></h3>
 <dl class="simple">
 <dt>d<span class="classifier">float</span></dt><dd><p>Distance between origin and x,y,z</p>
 </dd>
@@ -426,19 +526,19 @@ of the 400 meters and is assumed at (x,y) = (0,0).</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="mlcomm.channels.NYU2.get_delay_info">
-<span class="sig-name descname"><span class="pre">get_delay_info</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">DelayList</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nSP</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.channels.NYU2.get_delay_info" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">get_delay_info</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">DelayList</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nSP</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.channels.NYU2.get_delay_info" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="mlcomm.channels.NYU2.get_grid_index">
-<span class="sig-name descname"><span class="pre">get_grid_index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.channels.NYU2.get_grid_index" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">get_grid_index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.channels.NYU2.get_grid_index" title="Link to this definition"></a></dt>
 <dd><section id="id23">
-<h3>Description<a class="headerlink" href="#id23" title="Link to this heading">¶</a></h3>
+<h3>Description<a class="headerlink" href="#id23" title="Link to this heading"></a></h3>
 <p>Returns index of grid position based on position coordinates (x,y,z).  Used in cross-referencing position
 with SF map and LOS map.</p>
 </section>
 <section id="id24">
-<h3>Parameters<a class="headerlink" href="#id24" title="Link to this heading">¶</a></h3>
+<h3>Parameters<a class="headerlink" href="#id24" title="Link to this heading"></a></h3>
 <dl class="simple">
 <dt>x<span class="classifier">float</span></dt><dd><p>Position in x-coordinate</p>
 </dd>
@@ -452,17 +552,17 @@ with SF map and LOS map.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="mlcomm.channels.NYU2.get_los_map">
-<span class="sig-name descname"><span class="pre">get_los_map</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">area</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.channels.NYU2.get_los_map" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">get_los_map</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">area</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.channels.NYU2.get_los_map" title="Link to this definition"></a></dt>
 <dd><p>Generate the map of spatially correlated LOS/NLOS condition.</p>
 <section id="id25">
-<h3>Parameters<a class="headerlink" href="#id25" title="Link to this heading">¶</a></h3>
+<h3>Parameters<a class="headerlink" href="#id25" title="Link to this heading"></a></h3>
 <dl class="simple">
 <dt>area<span class="classifier">int</span></dt><dd><p>The size of the area (grid size).</p>
 </dd>
 </dl>
 </section>
 <section id="id26">
-<h3>Returns<a class="headerlink" href="#id26" title="Link to this heading">¶</a></h3>
+<h3>Returns<a class="headerlink" href="#id26" title="Link to this heading"></a></h3>
 <dl class="simple">
 <dt>los_map<span class="classifier">ndarray </span></dt><dd><p>The map of spatially correlated LOS/NLOS condition.</p>
 </dd>
@@ -472,17 +572,17 @@ with SF map and LOS map.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="mlcomm.channels.NYU2.get_sf_map">
-<span class="sig-name descname"><span class="pre">get_sf_map</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">area</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.channels.NYU2.get_sf_map" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">get_sf_map</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">area</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.channels.NYU2.get_sf_map" title="Link to this definition"></a></dt>
 <dd><p>Obtain the map of spatially correlated shadow fading.</p>
 <section id="id27">
-<h3>Parameters<a class="headerlink" href="#id27" title="Link to this heading">¶</a></h3>
+<h3>Parameters<a class="headerlink" href="#id27" title="Link to this heading"></a></h3>
 <dl class="simple">
 <dt>area<span class="classifier">int</span></dt><dd><p>The size of the area (grid size).</p>
 </dd>
 </dl>
 </section>
 <section id="id28">
-<h3>Returns<a class="headerlink" href="#id28" title="Link to this heading">¶</a></h3>
+<h3>Returns<a class="headerlink" href="#id28" title="Link to this heading"></a></h3>
 <dl class="simple">
 <dt>sf_map<span class="classifier">ndarray </span></dt><dd><p>The map of spatially correlated shadow fading.</p>
 </dd>
@@ -492,9 +592,9 @@ with SF map and LOS map.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="mlcomm.channels.NYU2.set_environment">
-<span class="sig-name descname"><span class="pre">set_environment</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.channels.NYU2.set_environment" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">set_environment</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.channels.NYU2.set_environment" title="Link to this definition"></a></dt>
 <dd><section id="id29">
-<h3>Description<a class="headerlink" href="#id29" title="Link to this heading">¶</a></h3>
+<h3>Description<a class="headerlink" href="#id29" title="Link to this heading"></a></h3>
 <p>Based on the current location of the ME, stored as attribute triple, ‘me_position’, 
 the position is cross-referenced with being LOS or NLOS and then paramters corresponding 
 to the particular environment are assigned to change the state of the channel.</p>
@@ -502,23 +602,23 @@ to the particular environment are assigned to change the state of the channel.</
 White Gaussian Accleration transition.</p>
 </section>
 <section id="id30">
-<h3>Parameters<a class="headerlink" href="#id30" title="Link to this heading">¶</a></h3>
+<h3>Parameters<a class="headerlink" href="#id30" title="Link to this heading"></a></h3>
 </section>
 <section id="id31">
-<h3>Returns<a class="headerlink" href="#id31" title="Link to this heading">¶</a></h3>
+<h3>Returns<a class="headerlink" href="#id31" title="Link to this heading"></a></h3>
 <p>None.</p>
 </section>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="mlcomm.channels.NYU2.update_me">
-<span class="sig-name descname"><span class="pre">update_me</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tau</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.channels.NYU2.update_me" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">update_me</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tau</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.channels.NYU2.update_me" title="Link to this definition"></a></dt>
 <dd><section id="id32">
-<h3>Description<a class="headerlink" href="#id32" title="Link to this heading">¶</a></h3>
+<h3>Description<a class="headerlink" href="#id32" title="Link to this heading"></a></h3>
 <p>Simulates ME motion with a White Gaussian Noise Acceleration model</p>
 </section>
 <section id="id33">
-<h3>Parameters<a class="headerlink" href="#id33" title="Link to this heading">¶</a></h3>
+<h3>Parameters<a class="headerlink" href="#id33" title="Link to this heading"></a></h3>
 <dl class="simple">
 <dt>tau<span class="classifier">float</span></dt><dd><p>Time in seconds during transition</p>
 </dd>
@@ -531,9 +631,9 @@ White Gaussian Accleration transition.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="mlcomm.channels.NYU_preset">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mlcomm.channels.</span></span><span class="sig-name descname"><span class="pre">NYU_preset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.channels.NYU_preset" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mlcomm.channels.</span></span><span class="sig-name descname"><span class="pre">NYU_preset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.channels.NYU_preset" title="Link to this definition"></a></dt>
 <dd><section id="id34">
-<h2>Description<a class="headerlink" href="#id34" title="Link to this heading">¶</a></h2>
+<h2>Description<a class="headerlink" href="#id34" title="Link to this heading"></a></h2>
 <p>Preset channel responses with spatial consistency used in DBZ simulations. Generated from NYU Sim 4.0:</p>
 <p><a class="reference external" href="https://wireless.engineering.nyu.edu/nyusim/">https://wireless.engineering.nyu.edu/nyusim/</a></p>
 <p>Each scenario Rural Macro (‘RMa’), Urban Macro (‘UMa’), and Urban Micro (‘UMi’) has two profiles, ‘Linear’ and ‘Hexagon’, each with 100 different sets of 600 time “snapshots” or time steps by our nomenclature.</p>
@@ -541,7 +641,7 @@ White Gaussian Accleration transition.</p>
 <p>Alternatively, the parameters for how we generated this are available in our work and may be generated by the user.</p>
 </section>
 <section id="id35">
-<h2>Parameters<a class="headerlink" href="#id35" title="Link to this heading">¶</a></h2>
+<h2>Parameters<a class="headerlink" href="#id35" title="Link to this heading"></a></h2>
 <dl>
 <dt>params<span class="classifier">dict</span></dt><dd><p>A dictionary of parameters used to initialize the channel.</p>
 <dl class="simple">
@@ -558,7 +658,7 @@ White Gaussian Accleration transition.</p>
 </dl>
 </section>
 <section id="id36">
-<h2>Attributes<a class="headerlink" href="#id36" title="Link to this heading">¶</a></h2>
+<h2>Attributes<a class="headerlink" href="#id36" title="Link to this heading"></a></h2>
 <dl class="simple">
 <dt>M<span class="classifier">int</span></dt><dd><p>Number of elements in the MIMO array.</p>
 </dd>
@@ -575,7 +675,7 @@ White Gaussian Accleration transition.</p>
 </dl>
 </section>
 <section id="id37">
-<h2>Methods<a class="headerlink" href="#id37" title="Link to this heading">¶</a></h2>
+<h2>Methods<a class="headerlink" href="#id37" title="Link to this heading"></a></h2>
 <dl class="simple">
 <dt>channel_fluctuation(nn):</dt><dd><p>Updates the channel matrix to the nth time snapshot.
 If nn is out of bounds, prints an error message.</p>
@@ -583,21 +683,21 @@ If nn is out of bounds, prints an error message.</p>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="mlcomm.channels.NYU_preset.channel_fluctuation">
-<span class="sig-name descname"><span class="pre">channel_fluctuation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nn</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.channels.NYU_preset.channel_fluctuation" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">channel_fluctuation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nn</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.channels.NYU_preset.channel_fluctuation" title="Link to this definition"></a></dt>
 <dd><p>Updates the channel matrix to the nth time snapshot.</p>
 <section id="id38">
-<h3>Parameters<a class="headerlink" href="#id38" title="Link to this heading">¶</a></h3>
+<h3>Parameters<a class="headerlink" href="#id38" title="Link to this heading"></a></h3>
 <dl class="simple">
 <dt>nn<span class="classifier">int</span></dt><dd><p>The index of the time snapshot to switch to.</p>
 </dd>
 </dl>
 </section>
 <section id="id39">
-<h3>Returns<a class="headerlink" href="#id39" title="Link to this heading">¶</a></h3>
+<h3>Returns<a class="headerlink" href="#id39" title="Link to this heading"></a></h3>
 <p>None</p>
 </section>
 <section id="raises">
-<h3>Raises<a class="headerlink" href="#raises" title="Link to this heading">¶</a></h3>
+<h3>Raises<a class="headerlink" href="#raises" title="Link to this heading"></a></h3>
 <dl class="simple">
 <dt>IndexError</dt><dd><p>If nn is out of the valid range of snapshots.</p>
 </dd>
@@ -610,16 +710,16 @@ If nn is out of bounds, prints an error message.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="mlcomm.channels.RicianAR1">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mlcomm.channels.</span></span><span class="sig-name descname"><span class="pre">RicianAR1</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.channels.RicianAR1" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mlcomm.channels.</span></span><span class="sig-name descname"><span class="pre">RicianAR1</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.channels.RicianAR1" title="Link to this definition"></a></dt>
 <dd><section id="id40">
-<h2>Description<a class="headerlink" href="#id40" title="Link to this heading">¶</a></h2>
+<h2>Description<a class="headerlink" href="#id40" title="Link to this heading"></a></h2>
 <p>Class object governing and containing parameters for a RicianAR1 channel model for a uniform linear array (ULA) along the x-axis.
 Parameter scenarios are set as in [1] [2].</p>
 <p>[1] Chiu, Sung-En, Nancy Ronquillo, and Tara Javidi. “Active learning and CSI acquisition for mmWave initial alignment.” IEEE Journal on Selected Areas in Communications 37.11 (2019): 2474-2489.
 [2] Blinn, Nathan, Jana Boerger, and Matthieu Bloch. “mmWave Beam Steering with Hierarchical Optimal Sampling for Unimodal Bandits.” ICC 2021-IEEE International Conference on Communications. IEEE, 2021.</p>
 </section>
 <section id="id41">
-<h2>Attributes<a class="headerlink" href="#id41" title="Link to this heading">¶</a></h2>
+<h2>Attributes<a class="headerlink" href="#id41" title="Link to this heading"></a></h2>
 <dl class="simple">
 <dt>M<span class="classifier">int</span></dt><dd><p>Number of elements in the array.</p>
 </dd>
@@ -644,14 +744,14 @@ Parameter scenarios are set as in [1] [2].</p>
 </dl>
 </section>
 <section id="id42">
-<h2>Methods<a class="headerlink" href="#id42" title="Link to this heading">¶</a></h2>
+<h2>Methods<a class="headerlink" href="#id42" title="Link to this heading"></a></h2>
 <dl class="simple">
 <dt>channel_fluctuation(self):</dt><dd><p>Updates the channel state to simulate fluctuations in dynamic fading.</p>
 </dd>
 </dl>
 </section>
 <section id="id43">
-<h2>Notes<a class="headerlink" href="#id43" title="Link to this heading">¶</a></h2>
+<h2>Notes<a class="headerlink" href="#id43" title="Link to this heading"></a></h2>
 <p>Multi-path effects tend to take place around the maain path, we choose this value
 to be .35 radians (~20 degrees).  More detail available in</p>
 <ul class="simple">
@@ -660,7 +760,7 @@ to be .35 radians (~20 degrees).  More detail available in</p>
 </ul>
 <dl class="py method">
 <dt class="sig sig-object py" id="mlcomm.channels.RicianAR1.fluctuation">
-<span class="sig-name descname"><span class="pre">fluctuation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nn</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.channels.RicianAR1.fluctuation" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">fluctuation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nn</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mlcomm.channels.RicianAR1.fluctuation" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </section>
@@ -669,96 +769,34 @@ to be .35 radians (~20 degrees).  More detail available in</p>
 </section>
 
 
+           </div>
           </div>
-          
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="codebooks.html" class="btn btn-neutral float-left" title="mlcomm.codebooks" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="util.html" class="btn btn-neutral float-right" title="mlcomm.util" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Georgia Institute of Technology.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-<h1 class="logo"><a href="index.html">mlcomm</a></h1>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
 
-
-
-
-
-
-
-
-<h3>Navigation</h3>
-<p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="setup_and_installation.html">Installation</a></li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">Functional Blocks</span></p>
-<ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="algorithms.html">mlcomm.algorithms</a></li>
-<li class="toctree-l1"><a class="reference internal" href="codebooks.html">mlcomm.codebooks</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">mlcomm.channels</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#mlcomm.channels.AWGN"><code class="docutils literal notranslate"><span class="pre">AWGN</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="#mlcomm.channels.BasicChannel"><code class="docutils literal notranslate"><span class="pre">BasicChannel</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="#mlcomm.channels.Channel"><code class="docutils literal notranslate"><span class="pre">Channel</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="#mlcomm.channels.DynamicMotion"><code class="docutils literal notranslate"><span class="pre">DynamicMotion</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="#mlcomm.channels.NYU1"><code class="docutils literal notranslate"><span class="pre">NYU1</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="#mlcomm.channels.NYU2"><code class="docutils literal notranslate"><span class="pre">NYU2</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="#mlcomm.channels.NYU_preset"><code class="docutils literal notranslate"><span class="pre">NYU_preset</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="#mlcomm.channels.RicianAR1"><code class="docutils literal notranslate"><span class="pre">RicianAR1</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="util.html">mlcomm.util</a></li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">Tutorials:</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="tutorials/simulation_quickstart.html">Simulation Quickstart</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorials/building_codebooks.html">Codebook Construction</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorials/algorithm_prototypes.html">Algorithm Prototypes and Templates</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorials/sphinx_rtd_relatively_painless.html">Getting a RTD Started for Git Repo</a></li>
-</ul>
-
-<div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="codebooks.html" title="previous chapter">mlcomm.codebooks</a></li>
-      <li>Next: <a href="util.html" title="next chapter">mlcomm.util</a></li>
-  </ul></li>
-</ul>
-</div>
-<search id="searchbox" style="display: none" role="search">
-  <h3 id="searchlabel">Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
-      <input type="submit" value="Go" />
-    </form>
-    </div>
-</search>
-<script>document.getElementById('searchbox').style.display = "block"</script>
-
-
-
-
-
-
-
-
-        </div>
-      </div>
-      <div class="clearer"></div>
-    </div>
-    <div class="footer">
-      &#169;2024, Georgia Institute of Technology.
-      
-      |
-      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.3.7</a>
-      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
-      
-      |
-      <a href="_sources/channels.rst.txt"
-          rel="nofollow">Page source</a>
-    </div>
-
-    
-
-    
-  </body>
+</body>
 </html>
