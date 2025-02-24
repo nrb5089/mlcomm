@@ -255,6 +255,8 @@ class RicianAR1(BasicChannel):
                 Number of signal paths.
             - 'snr': float
                 Signal-to-noise ratio.
+            - 'scenario' : str
+                Values are 'LOS' or 'NLOS', governs if there is a clear dominant path.
             - 'seed': int
                 Seed for random number generation.
             Recommended: 'fading_1' : 1, 'fading_2' : 10, 'correlation' : 0.024451
@@ -267,10 +269,15 @@ class RicianAR1(BasicChannel):
         self.g = params['correlation']
         self.L = params['num_paths']
         self.snr = params['snr']
+        self.scenario = params['scenario']
         self.seed = params['seed']
 
         self.angles = np.concatenate([[self.angle], np.random.uniform(self.angle-.35,self.angle+.35,self.L-1)]) 
-        self.alphas = np.concatenate([[1.],.1*np.ones(self.L-1)])* (np.sqrt(self.Kr/(1+self.Kr))*self.mu + np.sqrt(1/(1+self.Kr))*randcn(self.L))      #Initialize alpha (fading param)
+        
+        if self.scenario == 'LOS':
+            self.alphas = np.concatenate([[1.],np.sqrt(.1)*np.ones(self.L-1)])* (np.sqrt(self.Kr/(1+self.Kr))*self.mu + np.sqrt(1/(1+self.Kr))*randcn(self.L))      #Initialize alpha (fading param)
+        else:
+            self.alphas = np.sqrt(.1)*np.ones(self.L)* (np.sqrt(self.Kr/(1+self.Kr))*self.mu + np.sqrt(1/(1+self.Kr))*randcn(self.L))      #Initialize alpha (fading param)
         self.ht = np.sum([self.alphas[ii] * avec(self.angles[ii],self.M) for ii in np.arange(self.L)],axis = 0)
         
         

@@ -275,14 +275,18 @@ class HOSUB(AlgorithmTemplate):
             self.log_data['path'].append(current_best_midx)
             
             #Return if reached narrowest beamforming vector
-            if nodes[current_best_midx].h == self.cb_graph.H-1: return current_best_midx
+            if nodes[current_best_midx].h == self.cb_graph.H-1: 
+                self.log_data['relative_spectral_efficiency'].append( self.calculate_relative_spectral_efficiency(nodes[current_best_midx]))
+                return
             
             #Update neighborhood
             if nodes[current_best_midx].h == self.h0:
                 current_neighborhood_midxs = [nodes[current_best_midx].prior_sibling,nodes[current_best_midx].post_sibling, nodes[current_best_midx].zoom_in_midxs[0], nodes[current_best_midx].zoom_in_midxs[1]]
             else:
-                current_neighborhood_midxs = [nodes[current_best_midx].zoom_out_midx, nodes[current_best_midx].zoom_in_midxs[0], nodes[current_best_midx].zoom_in_midxs[1]]
-            
+                try:
+                    current_neighborhood_midxs = [nodes[current_best_midx].zoom_out_midx, nodes[current_best_midx].zoom_in_midxs[0], nodes[current_best_midx].zoom_in_midxs[1]]
+                except:
+                    pass
             nodes[current_best_midx].num_lead_select += 1
             
             #Maximum degree of any node is 4, hence we use the integer check from line 12 in Algorithm 1 in [1].  Otherwise, sample the highest UCB in the neighborhood.
@@ -293,13 +297,13 @@ class HOSUB(AlgorithmTemplate):
               
             #Sample node and update statistics
             self.update_node(node_to_sample,self.sample(node_to_sample))
-            self.channel.fluctuation(nn)
+            self.channel.fluctuation(nn, (self.cb_graph.min_max_angles[0],self.cb_graph.min_max_angles[1]))
             self.set_best()
             
             nn += 1
             
         est_best_midx =  np.argmax([node.empirical_mean_reward for node in nodes.values()])
-        self.calculate_relative_spectral_efficiency(nodes[est_best_midx])
+        self.log_data['relative_spectral_efficiency'].append( self.calculate_relative_spectral_efficiency(nodes[est_best_midx]))
         
     def update_node(self,node,r):
         """
@@ -393,7 +397,34 @@ class DBZ(AlgorithmTemplate):
         
         assert self.p[self.cb_graph.H-1] == 1, "Error: Last value of 'levels_to_play' (self.p) must be 1."
         
-
+        #Terms for the statistics are time-varying, hence must be calculated live as node methods
+        # def exploration(self,nn): 
+        #     nn = np.min([float(nn),self.W])
+            
+        #     return np.log(15.0*self.NH * (np.min([nn,self.W]))**4.0/4.0/self.delta)
+            
+        # def confidence_term(self,nn): 
+        #     num_pulls = len(np.where(np.array(self.sample_history) != 0)[0])
+        #     if num_pulls < 2: 
+        #         return np.inf
+        #     else:
+        #         empirical_variance = np.sum(np.array(self.sample_history)**2)/num_pulls - np.sum(self.sample_history)**2/num_pulls**2
+        #         return np.sqrt(4 * self.b * empirical_variance * self.exploration(nn) / num_pulls) + 2 * np.sqrt(2 * self.b * self.c) * self.exploration(nn) / (num_pulls-1) 
+        
+        # def ucb(self,nn): 
+        #     num_pulls = len(np.where(np.array(self.sample_history) != 0)[0])
+        #     if num_pulls < 2: 
+        #         return np.inf
+        #     else:
+        #         return 1/num_pulls * np.sum(self.sample_history) + self.confidence_term(nn)
+        
+        # def lcb(self,nn): 
+        #     num_pulls = len(np.where(np.array(self.sample_history) != 0)[0])
+        #     if num_pulls < 2: 
+        #         return -np.inf
+        #     else:
+        #         return 1/num_pulls * np.sum(self.sample_history)  - self.confidence_term(nn)
+        
         #Initialize node attributes and method for bandit algorithm
         for node in self.cb_graph.nodes.values():
             node.sample_history = []
@@ -402,9 +433,13 @@ class DBZ(AlgorithmTemplate):
             node.c = self.c
             node.W = self.W[node.h]
             node.NH = float(len(self.cb_graph.level_midxs[0]) + 3 * (self.cb_graph.H-1))  #Total number of beams, note that this is hard-coded for our purposes
-      
+            # node.exploration = types.MethodType(exploration,node)
+            # node.confidence_term = types.MethodType(confidence_term,node)
+            # node.ucb = types.MethodType(ucb,node)
+            # node.lcb = types.MethodType(lcb,node)
+    
     def run_alg(self,time_horizon):
-        if self.mode == 'stationary': time_horizon = 10000000 #Hard stop algorithm time ceiling
+        # if self.mode == 'stationary': time_horizon = 10000000 #Hard stop algorithm time ceiling
         nodes = self.cb_graph.nodes
         current_midxs = dcp(self.cb_graph.base_midxs[0])
         while self.p[nodes[current_midxs[0]].h] != 1:
@@ -464,8 +499,14 @@ class DBZ(AlgorithmTemplate):
             #Perform sampling iteration and increment time
             self.sampling_iteration(nn,gamma_midx,u_midx)
             nn += 1
-            
-        
+        if self.mode == 'stationary':
+            self.log_data['path'].append(gamma_midx)
+            self.log_data['samples'] = [nn]
+            if self.comm_node == None:
+                self.log_data['relative_spectral_efficiency'].append(0.0) 
+            else:
+                self.log_data['relative_spectral_efficiency'].append(self.calculate_relative_spectral_efficiency(self.comm_node))
+            return gamma_midx,nn
             
             
     def sampling_iteration(self,nn,gamma_midx,u_midx):
@@ -619,7 +660,285 @@ class DBZ(AlgorithmTemplate):
         self.set_best()
 
 
+class HBA(AlgorithmTemplate):
+    """
+    Description
+    -----------
+    Implements Hierarchical Beam Alignment (HBA) from [1]
+    
+    
+    [1] Wu, Wen, et al. "Fast mmwave beam alignment via correlated bandit learning." IEEE Transactions on Wireless Communications 18.12 (2019): 5894-5908.
+    
+    
+    Attributes
+    ----------
+    
+    Methods
+    -------
+    
+    Notes 
+    -----
+    
+    """
+    def __init__(self,params):
+        super().__init__(params)
+        
+        self.zeta = params['zeta']
+        self.gamma = params['gamma']
+        self.rho1 = params['rho1']
+        
+        self.N = len(self.cb_graph.level_midxs[-1])                                    #Number of beam directions
+        # self.hmax = int(np.log2(self.N)+1)                       #Maximum Tree depth
+        self.hmax = self.cb_graph.H + 1
+        self.Q = np.inf * np.ones([self.hmax,self.N])            #Q-values for algorithm
+        
+        
+        self.Nt = np.zeros([self.hmax,self.N])                       
+        self.Rt = np.zeros([self.hmax,self.N])
+        self.Et = np.zeros([self.hmax,self.N])    
+    
 
+
+        
+    def run_alg(self, time_horizon):
+        
+        def xa(xH,xL): return xL + (xH-xL)/2
+        
+        nodes = self.cb_graph.nodes
+        self.Tcal = list([(0,0)])                               #Initialize tree to be constructed.
+        xH,xL = (1,0)
+        relative_spectral_efficiencies = []
+        # t = 1
+        # flops = []
+        nn = 1
+        while nn <= time_horizon:
+            # print(t)
+            # t_flops = 0.0
+            h,j = (0,0)
+            Pcal = list([(h,j)])
+            xH,xL = (1,0)
+            while (h,j) in self.Tcal:
+                if self.Q[h+1,2*j] > self.Q[h+1,2*j+1]:    
+                    (h,j) = (h+1,2*j)
+                    xL = xa(xH,xL)
+                    # t_flops += 3
+                elif self.Q[h+1,2*j] < self.Q[h+1,2*j+1]:  
+                    (h,j) = (h+1,2*j+1)
+                    xH = xa(xH,xL)     
+                    # t_flops += 3
+                else:
+                    (h,j) = (h+1, 2*j + np.random.choice([0,1]))
+                
+                Pcal.append((h,j))
+
+                if h==self.hmax-1 or j == 2**h:
+                    break
+                    
+            (Ht,Jt) = (h,j)
+            if (Ht,Jt) not in self.Tcal:
+                self.Tcal.append((Ht,Jt))
+
+            sampling_idx = self.get_idx(h,j)
+            node_to_sample = nodes[self.cb_graph.level_midxs[-1][sampling_idx]]
+            # y = np.abs(self.sample(node_to_sample,mode = 'complex'))**2
+            y = self.sample(node_to_sample,mode = 'rss')
+            for (h,j) in Pcal:
+                self.Nt[h,j] += 1                       #increment the number of times sampled
+                self.Rt[h,j] = ((self.Nt[h,j] - 1)*self.Rt[h,j] + y)/self.Nt[h,j]
+                # t_flops += 5.0
+                
+            for (h,j) in self.Tcal:
+                if self.Nt[h,j] > 0:
+                    if self.channel.sigma_v < .1: sigma = .1
+                    else: sigma = self.channel.sigma_v
+                    self.Et[h,j] = self.Rt[h,j] + np.sqrt(2* sigma**2 * np.log(nn)/self.Nt[h,j]) + self.rho1*self.gamma**h
+                    # self.Et[h,j] = self.Rt[h,j] + np.sqrt(2* np.log(nn)/self.Nt[h,j]) + self.rho1*self.gamma**h
+                    
+                    # t_flops += 7.0
+                else:
+                    self.Et[h,j] = np.inf
+
+            That = dcp(self.Tcal)
+            for (h,j) in self.Tcal:
+                if self.Nt[h,j]>0:
+                    if h != self.hmax-1:
+                        self.Q[h,j] = np.min([self.Et[h,j],np.max([self.Q[h+1,2*j],self.Q[h+1,2*j+1]])])
+                        # t_flops += 3.0 
+                    else:
+                        self.Q[h,j] = self.Et[h,j]
+                That.remove((h,j))
+            
+            # flops.append(t_flops)
+            # print(xH-xL)
+            if xH - xL <= self.zeta/self.N or nn == time_horizon: #Stopping criteria, still not clear what's going on 
+                max_el = np.max(self.Et)
+#                    
+                self.mh,self.mj = np.where(self.Et == max_el) #Find current arm providing max rewards
+                self.mh = self.mh[0]
+                self.mj = self.mj[0]
+                est_best_idx = self.get_idx(self.mh,self.mj)
+                est_best_node = nodes[self.cb_graph.level_midxs[-1][est_best_idx]]
+                self.log_data['relative_spectral_efficiency'].append(self.calculate_relative_spectral_efficiency(est_best_node))
+                self.log_data['samples'].append(nn)
+                return
+            
+            self.channel.fluctuation(nn,(self.cb_graph.min_max_angles[0],self.cb_graph.min_max_angles[1]))
+            self.set_best()
+            nn += 1
+
+    def get_idx(self,h,j):
+        def xa(xH,xL): return xL + (xH-xL)/2
+        C = (j/2**h, (j+1)/2**h)
+        mid_point =xa(C[0],C[1])
+        idx = int(mid_point*self.N)
+        return idx
+
+
+    # def __init__(self,params):
+    #     """
+    #     Description
+    #     ------------
+        
+
+    #     Parameters
+    #     ----------
+    #     params : dict
+    #         'zeta'
+    #         Hyperparameter governing stopping time, for a fixed resolution codebook, this should be set to be just finer than the resolution of the beamwidth.
+    #         'rho1' 
+    #         First hyperparameter dictating confidence bound width
+    #         'gamma'
+    #         Second hyperparameter dictating confidence bound width, scaled by level h
+            
+    #     Returns
+    #     -------
+    #     None.
+
+    #     """
+    #     super().__init__(params)
+    #     self.zeta = params['zeta']
+        
+    #     nodes = self.cb_graph.nodes
+    #     self.regions = []
+    #     for hh in range(self.cb_graph.H):
+    #         regions_h = []
+    #         for jj in range(int(2**(hh+1))):
+    #             region_center_pointing_angle = self.cb_graph.min_max_angles[0] + (self.cb_graph.min_max_angles[1] - self.cb_graph.min_max_angles[0]) * (1/(2**(hh+2)) + jj*1/(2**(hh+1)))
+    #             closest_midx = self.cb_graph.level_midxs[-1][np.argmin([np.abs(region_center_pointing_angle - nodes[midx].steered_angle) for midx in self.cb_graph.level_midxs[-1]])]
+    #             regions_h.append(HBA.Region({'hh': hh, 'jj': jj, 'corr_midx' : closest_midx, 'region_center_pointing_angle' : region_center_pointing_angle, 'max_depth' : self.cb_graph.H, 'rho1' : params['rho1'], 'gamma' : params['gamma']}))
+    #         self.regions.append(regions_h)
+        
+    # def run_alg(self,time_horizon):
+    #     """
+    #     Description
+    #     -----------
+        
+    #     """
+    #     def xa(xL,xH): return xL + (xH-xL)/2
+    #     def get_closest_midx(xL,xH):
+    #         """
+    #         Finds the midx corresponding to the beam with the pointing angle closest to the midpoint of xL and xH
+    #         """
+    #         required_pointing_angle = self.cb_graph.min_max_angles[0] + (self.cb_graph.min_max_angles[1]-self.cb_graph.min_max_angles[0]) * xa(xL,xH)
+    #         closest_midx = self.cb_graph.level_midxs[-1][np.argmin([np.abs(required_pointing_angle - nodes[midx].steered_angle) for midx in self.cb_graph.level_midxs[-1]])]
+    #         return closest_midx
+            
+    #     nodes = self.cb_graph.nodes
+    #     nn = 0
+    #     T = [(-1,0)]
+    #     xL,xH = 0,1
+    #     N = len(self.cb_graph.level_midxs[-1])
+                
+    #     while nn < time_horizon:
+    #         hh, jj = -1,0
+    #         P = []
+    #         while (hh,jj) in T:
+    #             if self.regions[hh+1][int(2*jj)].Q > self.regions[hh+1][int(2*jj+1)].Q:
+    #                 (hh,jj) = (hh+1, int(2*jj))
+    #                 xL = xa(xL,xH)
+    #             elif self.regions[hh+1][int(2*jj)].Q < self.regions[hh+1][int(2*jj+1)].Q:
+    #                 (hh,jj) = (hh+1,int(2*jj+1))
+    #                 xH = xa(xL,xH)
+    #             else:
+    #                 (hh,jj) = (hh + 1, np.random.choice([int(2*jj),int(2*jj+1)]))
+    #             P.append((hh,jj))
+                
+    #             if hh == self.cb_graph.H-1 or jj == 2**hh:
+    #                 break
+                
+    #         Hnn,Jnn = dcp((hh,jj))
+    #         T.append((Hnn,Jnn))
+    #         r = self.sample(nodes[self.regions[Hnn][Jnn].corr_midx])
+    #         nn +=1
+            
+    #         # Update rewards along the path
+    #         for (hh,jj) in P:
+    #             self.regions[hh][jj].update_R(r)
+                
+    #         # Update statistics through the tree
+    #         for (hh,jj) in T:
+    #             if hh == -1: pass
+    #             else: self.regions[hh][jj].update_E(self.channel.sigma_v,nn)
+            
+    #         # Update Q values working backwards through the graph (bottom to top)
+    #         That = dcp(T)
+    #         h_max = np.max([elem[0] for elem in That])
+    #         for hh in np.arange(0,h_max+1)[-1::-1]:
+    #             leafs = [elem for elem in That if elem[0] == hh]
+    #             for leaf in leafs: 
+    #                 if leaf[0] == self.cb_graph.H-1:
+    #                     self.regions[leaf[0]][leaf[1]].Q = dcp(self.regions[leaf[0]][leaf[1]].E)
+    #                 else:
+    #                     self.regions[leaf[0]][leaf[1]].Q = np.min([self.regions[leaf[0]][leaf[1]].E,np.max([self.regions[leaf[0]+1][int(2*leaf[1])].Q,self.regions[leaf[0]+1][int(2*leaf[1]+1)].Q])])
+    #                 That.remove(leaf)
+                
+    #         if xH-xL < self.zeta/N and P[-1][0] == self.cb_graph.H-1: 
+    #             est_best_midx = get_closest_midx(xL, xH)
+                
+    #             self.log_data['path'].append(est_best_midx)
+    #             self.set_best()
+    #             self.log_data['relative_spectral_efficiency'].append(self.calculate_relative_spectral_efficiency(nodes[est_best_midx]))
+    #             self.log_data['samples'] = [nn]
+    #             return 
+    
+    # class Region:
+    #     """
+    #     Description
+    #     -----------
+    #     Basic helper object to store bandit statistics for each region
+        
+    #     Attributes
+    #     ----------
+    #     corr_midx : int
+    #         midx corresponding to beamforming vector in beamforming codebook object node.
+    #     """
+    #     def __init__(self,params):
+    #         self.hh = params['hh']
+    #         self.jj = params['jj']
+    #         self.max_depth = params['max_depth']
+    #         self.corr_midx = params['corr_midx']
+    #         self.fac = params['rho1'] * params['gamma']**(self.hh+1)
+    #         self.region_center_pointing_angle = params['region_center_pointing_angle']
+    #         self.Q = np.inf
+    #         self.E = np.inf
+    #         self.R = 0.0
+    #         self.num_picks = 0.0
+            
+    #         if self.hh + 1 == params['max_depth']: self.partition_regions = []
+    #         else: self.partition_regions = [(self.hh + 1, 2*self.jj), (self.hh + 1, 2*self.jj + 1)]
+        
+    #     def update_R(self,r):
+    #         self.num_picks += 1
+    #         self.R = ((self.num_picks -1) * self.R + r)/self.num_picks
+            
+    #     def update_E(self,sigma,nn):
+    #         if self.num_picks > 0:
+    #             # self.E = self.R + np.sqrt(2*sigma**2*nn/self.num_picks) + self.fac
+    #             self.E = self.R + np.sqrt(.01*sigma**2*nn/self.num_picks) + self.fac
+    #         # if self.hh +1 == self.max_depth:
+    #         #     self.Q = dcp(self.E)
+    #         # else:
+    #         # self.Q = np.min([self.E, np.max([Q0,Q1])])
                                  
 class OffsetMAB(AlgorithmTemplate):
     """
@@ -806,7 +1125,6 @@ class OffsetMAB(AlgorithmTemplate):
         return current_midxs
     
     
-                                
 ## Bayesian Algorithms
 class HPM(AlgorithmTemplate):
     """
@@ -986,7 +1304,7 @@ class HPM(AlgorithmTemplate):
             athetai = np.array([avec(angle,self.cb_graph.M) @ np.conj(current_node.f) for angle in np.array([self.cb_graph.nodes[midx].steered_angle for midx in self.cb_graph.level_midxs[-1]])])
             nn_flops += 2 * self.cb_graph.M * N
             
-            # mus = np.sum([alpha_hats[ll] *  athetai for ll in np.arange(self.channel.L)],axis = 0)
+            #mus = np.sum([alpha_hats[ll] *  athetai for ll in np.arange(self.channel.L)],axis = 0)
             mus = np.sum([alpha_hats[ll] *  athetai for ll in np.arange(1)],axis = 0)
             nn_flops += self.channel.L
             
@@ -1016,7 +1334,7 @@ class HPM(AlgorithmTemplate):
             elif (self.mode == 'FL' and nn == self.time_horizon): return 
             else:
                 nn +=1
-                self.channel.fluctuation(nn,angle_limits = self.cb_graph.min_max_angles)
+                self.channel.fluctuation(nn,(self.cb_graph.min_max_angles[0],self.cb_graph.min_max_angles[1]))
                 self.set_best()
             
             
@@ -1249,7 +1567,7 @@ class ABT(AlgorithmTemplate):
             self.log_data['flops'].append(nn_flops)
             self.log_data['relative_spectral_efficiency'].append(self.calculate_relative_spectral_efficiency(nodes[est_best_midx]))
             
-            self.channel.fluctuation(nn,self.cb_graph.min_max_angles)
+            self.channel.fluctuation(nn,(self.cb_graph.min_max_angles[0],self.cb_graph.min_max_angles[1]))
             self.set_best()
             
         return log_data
@@ -1582,7 +1900,7 @@ class TASD(AlgorithmTemplate):
             empirical_mean_rewards = [nodes[midx].empirical_mean_reward for midx in current_midxs]
             num_pulls = [nodes[midx].num_pulls for midx in current_midxs]
             nn+=1
-            self.channel.fluctuation(nn,self.cb_graph.min_max_angles)
+            self.channel.fluctuation(nn,(self.cb_graph.min_max_angles[0],self.cb_graph.min_max_angles[1]))
             self.set_best()
             
         est_best_midx = current_midxs[np.argmax(empirical_mean_rewards)]
@@ -1961,7 +2279,7 @@ class MotionTS(TASD):
             self.log_data['path'].append(self.comm_node)
         self.log_data['samples'].append(1.0)
         
-        self.channel.fluctuation()
+        self.channel.fluctuation(nn,(self.cb_graph.min_max_angles[0],self.cb_graph.min_max_angles[1]))
         self.set_best()
         
         
